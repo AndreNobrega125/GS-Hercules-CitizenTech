@@ -1,6 +1,7 @@
 /// Aviso meteorológico oficial do INMET.
 class OfficialWarning {
   const OfficialWarning({
+    this.id = '',
     required this.description,
     required this.severity,
     required this.colorHex,
@@ -10,6 +11,7 @@ class OfficialWarning {
     required this.instructions,
   });
 
+  final String id;
   final String description;
   final String severity;
   final String colorHex;
@@ -22,6 +24,7 @@ class OfficialWarning {
     List<String> strings(dynamic v) =>
         v is List ? v.map((e) => e.toString()).toList() : const [];
     return OfficialWarning(
+      id: (j['id_aviso'] ?? j['id'] ?? '').toString(),
       description: (j['descricao'] ?? '').toString(),
       severity: (j['severidade'] ?? '').toString(),
       colorHex: (j['aviso_cor'] ?? '#888888').toString(),

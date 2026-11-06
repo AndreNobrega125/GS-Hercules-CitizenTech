@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/router.dart';
 import '../../core/territory.dart';
+import '../../domain/alert_engine.dart';
 import '../../data/models/city_boundary.dart';
 import '../../data/models/official_warning.dart';
 import '../../state/territory_provider.dart';
@@ -40,7 +43,11 @@ class RisksScreen extends StatelessWidget {
               message: 'Nenhum aviso ativo para São Paulo agora.',
             )
           else
-            for (final w in warnings) _WarningCard(warning: w),
+            for (var i = 0; i < warnings.length; i++)
+              _WarningCard(
+                warning: warnings[i],
+                alertId: AlertEngine.officialId(i, warnings[i]),
+              ),
           const SizedBox(height: 8),
           const Text(
             'Avisos oficiais apoiam, mas não substituem, a decisão humana. '
@@ -99,9 +106,10 @@ class _TerritoryMap extends StatelessWidget {
 }
 
 class _WarningCard extends StatelessWidget {
-  const _WarningCard({required this.warning});
+  const _WarningCard({required this.warning, required this.alertId});
 
   final OfficialWarning warning;
+  final String alertId;
 
   Color get _color {
     final hex = warning.colorHex.replaceFirst('#', '');
@@ -129,6 +137,18 @@ class _WarningCard extends StatelessWidget {
             const Text('Instruções', style: TextStyle(fontWeight: FontWeight.bold)),
             for (final i in warning.instructions) Text('• $i'),
           ],
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FilledButton.tonalIcon(
+              icon: const Icon(Icons.fact_check),
+              label: const Text('Ver justificativa e confiança'),
+              onPressed: () => context.pushNamed(
+                Routes.alertDetail,
+                pathParameters: {'id': alertId},
+              ),
+            ),
+          ),
         ],
       ),
     );

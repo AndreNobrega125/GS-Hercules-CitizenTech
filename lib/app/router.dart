@@ -2,6 +2,8 @@
 
 import '../state/settings_provider.dart';
 import '../ui/screens/air_screen.dart';
+import '../ui/screens/alert_detail_screen.dart';
+import '../ui/screens/alerts_screen.dart';
 import '../ui/screens/climate_screen.dart';
 import '../ui/screens/consent_screen.dart';
 import '../ui/screens/overview_screen.dart';
@@ -17,6 +19,8 @@ class Routes {
   static const climate = 'climate';
   static const air = 'air';
   static const risks = 'risks';
+  static const alerts = 'alerts';
+  static const alertDetail = 'alert-detail';
   static const settings = 'settings';
 }
 
@@ -55,6 +59,20 @@ GoRouter buildRouter(SettingsProvider settings) {
             path: 'risks',
             name: Routes.risks,
             builder: (_, _) => const RisksScreen(),
+          ),
+          GoRoute(
+            path: 'alerts',
+            name: Routes.alerts,
+            builder: (_, state) =>
+                AlertsScreen(initialKind: state.uri.queryParameters['kind']),
+            routes: [
+              GoRoute(
+                path: ':id',
+                name: Routes.alertDetail,
+                builder: (_, state) =>
+                    AlertDetailScreen(alertId: state.pathParameters['id']!),
+              ),
+            ],
           ),
           GoRoute(
             path: 'settings',

@@ -1,23 +1,36 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/router.dart';
 import '../../data/models/weather.dart';
+import '../../domain/territory_alert.dart';
 import '../../domain/trend.dart';
 import '../../state/territory_provider.dart';
 import '../widgets/chart_card.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/trend_chip.dart';
 
-class ClimateScreen extends StatelessWidget {
+class ClimateScreen extends StatefulWidget {
   const ClimateScreen({super.key});
+
+  @override
+  State<ClimateScreen> createState() => _ClimateScreenState();
+}
+
+class _ClimateScreenState extends State<ClimateScreen> {
+  int _days = 30;
 
   @override
   Widget build(BuildContext context) {
     final snapshot = context.watch<TerritoryProvider>().snapshot;
     final forecast = snapshot?.forecast;
-    final history = snapshot?.history;
+    final all = snapshot?.history;
+    final history = (all != null && all.length > _days)
+        ? all.sublist(all.length - _days)
+        : all;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Clima')),
@@ -29,9 +42,28 @@ class ClimateScreen extends StatelessWidget {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _Trends(history: history, forecast: forecast),
+                SegmentedButton<int>(
+                  showSelectedIcon: false,
+                  segments: const [
+                    ButtonSegment(value: 7, label: Text('7 dias')),
+                    ButtonSegment(value: 14, label: Text('14 dias')),
+                    ButtonSegment(value: 30, label: Text('30 dias')),
+                  ],
+                  selected: {_days},
+                  onSelectionChanged: (s) => setState(() => _days = s.first),
+                ),
+                const SizedBox(height: 12),
+                _Trends(history: history, forecast: forecast, days: _days),
                 _RainChart(forecast: forecast),
-                _TempChart(history: history, forecast: forecast),
+                _TempChart(history: history, forecast: forecast, days: _days),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.notifications_active),
+                  label: const Text('Ver alertas de chuva'),
+                  onPressed: () => context.pushNamed(
+                    Routes.alerts,
+                    queryParameters: {'kind': AlertKind.rain.name},
+                  ),
+                ),
               ],
             ),
     );
@@ -39,10 +71,15 @@ class ClimateScreen extends StatelessWidget {
 }
 
 class _Trends extends StatelessWidget {
-  const _Trends({required this.history, required this.forecast});
+  const _Trends({
+    required this.history,
+    required this.forecast,
+    required this.days,
+  });
 
   final List<DailyWeather>? history;
   final List<DailyWeather> forecast;
+  final int days;
 
   @override
   Widget build(BuildContext context) {
@@ -54,8 +91,8 @@ class _Trends extends StatelessWidget {
       child: Wrap(
         spacing: 8,
         children: [
-          TrendChip(label: 'Chuva (30 dias)', trend: trendOf(rain.toList())),
-          TrendChip(label: 'Temperatura (30 dias)', trend: trendOf(temp.toList())),
+          TrendChip(label: 'Chuva ($days dias)', trend: trendOf(rain.toList())),
+          TrendChip(label: 'Temperatura ($days dias)', trend: trendOf(temp.toList())),
           Chip(
             avatar: const Icon(Icons.water_drop, size: 18),
             label: Text('Próx. 7 dias: ${rainNext.toStringAsFixed(0)} mm'),
@@ -119,10 +156,15 @@ class _RainChart extends StatelessWidget {
 }
 
 class _TempChart extends StatelessWidget {
-  const _TempChart({required this.history, required this.forecast});
+  const _TempChart({
+    required this.history,
+    required this.forecast,
+    required this.days,
+  });
 
   final List<DailyWeather>? history;
   final List<DailyWeather> forecast;
+  final int days;
 
   @override
   Widget build(BuildContext context) {
@@ -147,7 +189,7 @@ class _TempChart extends StatelessWidget {
 
     return ChartCard(
       title: 'Temperatura máxima (°C)',
-      caption: 'Linha cheia: últimos 30 dias. Tracejada: previsão.',
+      caption: 'Linha cheia: últimos $days dias. Tracejada: previsão.',
       summary: 'Histórico de ${past.length} dias seguido de '
           '${forecast.length} dias de previsão.',
       child: LineChart(

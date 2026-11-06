@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../app/router.dart';
 import '../../data/models/territory_snapshot.dart';
 import '../../state/territory_provider.dart';
+import '../widgets/alert_banner.dart';
 
 class OverviewScreen extends StatelessWidget {
   const OverviewScreen({super.key});
@@ -80,6 +81,7 @@ class _Content extends StatelessWidget {
       orElse: () => snapshot.air!.last,
     );
     final warnings = snapshot.warnings;
+    final alerts = context.watch<TerritoryProvider>().alerts;
     final stamp = snapshot.updatedAt == null
         ? ''
         : DateFormat('dd/MM HH:mm').format(snapshot.updatedAt!);
@@ -89,6 +91,11 @@ class _Content extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          if (alerts.isNotEmpty)
+            AlertBanner(
+              alerts: alerts,
+              onTap: () => context.pushNamed(Routes.alerts),
+            ),
           if (snapshot.usedCache)
             _Tile(
               icon: Icons.cloud_off,
@@ -122,6 +129,14 @@ class _Content extends StatelessWidget {
                     ? 'Nenhum aviso ativo para São Paulo.'
                     : '${warnings.length} aviso(s) ativo(s): '
                         '${warnings.map((w) => w.description).join(', ')}',
+          ),
+          _Tile(
+            icon: Icons.notifications_active,
+            title: 'Alertas',
+            body: alerts.isEmpty
+                ? 'Nenhum alerta no momento.'
+                : '${alerts.length} alerta(s) com justificativa e confiança.',
+            onTap: () => context.pushNamed(Routes.alerts),
           ),
           _Tile(
             icon: Icons.groups,
