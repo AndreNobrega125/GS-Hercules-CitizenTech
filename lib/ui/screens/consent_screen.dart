@@ -22,7 +22,7 @@ class ConsentScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Este app apoia gestores e cidadãos de São Paulo com '
+                'Este app apoia gestores e cidadãos de qualquer município do Brasil com '
                 'indicadores e alertas. Os alertas apoiam, mas não substituem, '
                 'a decisão humana.',
                 style: text.bodyLarge,

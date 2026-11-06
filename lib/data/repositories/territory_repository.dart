@@ -2,8 +2,10 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/territory.dart';
 import '../models/air_reading.dart';
 import '../models/city_boundary.dart';
+import '../models/locality.dart';
 import '../models/official_warning.dart';
 import '../models/territory_snapshot.dart';
 import '../models/weather.dart';
@@ -44,23 +46,56 @@ class TerritoryRepository {
     }
   }
 
-  Future<TerritorySnapshot> load() async {
+  /// Estados (UFs), do cache quando offline. Lança se não houver nada.
+  Future<List<UfInfo>> states() async {
+    final f = await _load('states', _api.states);
+    if (f == null) throw StateError('Sem dados de estados');
+    return [for (final e in f.data as List) UfInfo.fromJson(e as Map<String, dynamic>)];
+  }
+
+  Future<List<Municipality>> municipalities(String uf) async {
+    final f = await _load('municipalities_$uf', () => _api.municipalities(uf));
+    if (f == null) throw StateError('Sem dados de municípios');
+    return [
+      for (final e in f.data as List)
+        Municipality.fromJson(e as Map<String, dynamic>),
+    ];
+  }
+
+  Future<TerritorySnapshot> load(Territory territory) async {
+    final code = territory.ibgeCode;
+
+    // O contorno vem primeiro: dele sai o ponto de referência do clima e do ar.
+    final boundaryF = await _load('boundary_$code', () => _api.boundary(code));
+    final boundary = boundaryF == null
+        ? null
+        : CityBoundary.fromGeoJson(boundaryF.data as Map<String, dynamic>);
+    final center = boundary?.center;
+    final lat = center?.latitude ?? territory.latitude;
+    final lon = center?.longitude ?? territory.longitude;
+
+    Future<_Fetched?> geo(
+      String key,
+      Future<Object> Function(double lat, double lon) fetch,
+    ) {
+      if (lat == null || lon == null) return Future.value();
+      return _load('${key}_$code', () => fetch(lat, lon));
+    }
+
     final results = await Future.wait([
-      _load('forecast', _api.forecast),
-      _load('history', _api.history),
-      _load('air', _api.airQuality),
-      _load('warnings', _api.warnings),
-      _load('population', _api.population),
-      _load('boundary', _api.boundary),
+      geo('forecast', _api.forecast),
+      geo('history', _api.history),
+      geo('air', _api.airQuality),
+      _load('warnings_$code', () => _api.warnings(code)),
+      _load('population_$code', () => _api.population(code)),
     ]);
     final forecast = results[0];
     final history = results[1];
     final air = results[2];
     final warnings = results[3];
     final population = results[4];
-    final boundary = results[5];
 
-    final used = results.whereType<_Fetched>().toList();
+    final used = [...results, boundaryF].whereType<_Fetched>().toList();
     final oldest = used.isEmpty
         ? null
         : used.map((f) => f.savedAt).reduce((a, b) => a.isBefore(b) ? a : b);
@@ -82,9 +117,7 @@ class TerritoryRepository {
                 OfficialWarning.fromJson(w as Map<String, dynamic>),
             ],
       population: population == null ? null : population.data as int,
-      boundary: boundary == null
-          ? null
-          : CityBoundary.fromGeoJson(boundary.data as Map<String, dynamic>),
+      boundary: boundary,
       usedCache: used.any((f) => f.fromCache),
       updatedAt: oldest,
     );

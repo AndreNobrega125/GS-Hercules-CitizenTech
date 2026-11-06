@@ -22,7 +22,7 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => SettingsProvider(prefs)),
         ChangeNotifierProvider(
-          create: (_) => TerritoryProvider(repository)..load(),
+          create: (_) => TerritoryProvider(repository, prefs)..load(),
         ),
       ],
       child: const RadarApp(),

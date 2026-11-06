@@ -17,18 +17,24 @@ class RisksScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final snapshot = context.watch<TerritoryProvider>().snapshot;
+    final provider = context.watch<TerritoryProvider>();
+    final snapshot = provider.snapshot;
     final warnings = snapshot?.warnings;
+    final city = provider.territory;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Riscos oficiais')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _TerritoryMap(boundary: snapshot?.boundary),
+          _TerritoryMap(
+            key: ValueKey(city.ibgeCode),
+            boundary: snapshot?.boundary,
+            territory: city,
+          ),
           const SizedBox(height: 12),
           Text(
-            'Avisos do INMET para São Paulo',
+            'Avisos do INMET para ${city.name}',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
@@ -38,9 +44,9 @@ class RisksScreen extends StatelessWidget {
               message: 'Sem dados de avisos. Volte e atualize.',
             )
           else if (warnings.isEmpty)
-            const EmptyState(
+            EmptyState(
               icon: Icons.check_circle_outline,
-              message: 'Nenhum aviso ativo para São Paulo agora.',
+              message: 'Nenhum aviso ativo para ${city.name} agora.',
             )
           else
             for (var i = 0; i < warnings.length; i++)
@@ -60,24 +66,34 @@ class RisksScreen extends StatelessWidget {
 }
 
 class _TerritoryMap extends StatelessWidget {
-  const _TerritoryMap({required this.boundary});
+  const _TerritoryMap({super.key, required this.boundary, required this.territory});
 
   final CityBoundary? boundary;
+  final Territory territory;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final bounds = boundary?.bounds;
+    final center = boundary?.center ??
+        LatLng(territory.latitude ?? -14.2, territory.longitude ?? -51.9);
     return Semantics(
-      label: 'Mapa do município de São Paulo com o contorno da cidade.',
+      label: 'Mapa do município de ${territory.name} com o contorno da cidade.',
       excludeSemantics: true,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: SizedBox(
           height: 260,
           child: FlutterMap(
-            options: const MapOptions(
-              initialCenter: LatLng(Territory.latitude, Territory.longitude),
-              initialZoom: 9.5,
+            options: MapOptions(
+              initialCenter: center,
+              initialZoom: boundary == null && territory.latitude == null ? 4 : 9.5,
+              initialCameraFit: bounds == null
+                  ? null
+                  : CameraFit.bounds(
+                      bounds: bounds,
+                      padding: const EdgeInsets.all(24),
+                    ),
             ),
             children: [
               TileLayer(

@@ -1,3 +1,4 @@
+import 'package:flutter_map/flutter_map.dart' show LatLngBounds;
 import 'package:latlong2/latlong.dart';
 
 /// Contorno do município (anéis externos), vindo da malha do IBGE.
@@ -5,6 +6,18 @@ class CityBoundary {
   const CityBoundary(this.rings);
 
   final List<List<LatLng>> rings;
+
+  Iterable<LatLng> get _points => rings.expand((r) => r);
+
+  /// Centro da caixa que envolve o contorno (ponto de referência do município).
+  LatLng? get center {
+    if (_points.isEmpty) return null;
+    final bounds = LatLngBounds.fromPoints(_points.toList());
+    return bounds.center;
+  }
+
+  LatLngBounds? get bounds =>
+      _points.isEmpty ? null : LatLngBounds.fromPoints(_points.toList());
 
   /// Lê um GeoJSON `FeatureCollection` com `Polygon` ou `MultiPolygon`.
   factory CityBoundary.fromGeoJson(Map<String, dynamic> json) {

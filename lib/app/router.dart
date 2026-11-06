@@ -9,6 +9,7 @@ import '../ui/screens/consent_screen.dart';
 import '../ui/screens/overview_screen.dart';
 import '../ui/screens/risks_screen.dart';
 import '../ui/screens/settings_screen.dart';
+import '../ui/screens/territory_picker_screen.dart';
 
 /// Rotas nomeadas do app.
 class Routes {
@@ -22,6 +23,7 @@ class Routes {
   static const alerts = 'alerts';
   static const alertDetail = 'alert-detail';
   static const settings = 'settings';
+  static const territory = 'territory';
 }
 
 GoRouter buildRouter(SettingsProvider settings) {
@@ -73,6 +75,11 @@ GoRouter buildRouter(SettingsProvider settings) {
                     AlertDetailScreen(alertId: state.pathParameters['id']!),
               ),
             ],
+          ),
+          GoRoute(
+            path: 'territory',
+            name: Routes.territory,
+            builder: (_, _) => const TerritoryPickerScreen(),
           ),
           GoRoute(
             path: 'settings',

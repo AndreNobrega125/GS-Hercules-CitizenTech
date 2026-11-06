@@ -16,7 +16,30 @@ class OverviewScreen extends StatelessWidget {
     final state = context.watch<TerritoryProvider>();
     return Scaffold(
       appBar: AppBar(
-        title: const Text('São Paulo'),
+        title: Semantics(
+          button: true,
+          label: 'Município atual: ${state.territory.label}. Toque para trocar.',
+          excludeSemantics: true,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => context.pushNamed(Routes.territory),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      state.territory.label,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const Icon(Icons.arrow_drop_down),
+                ],
+              ),
+            ),
+          ),
+        ),
         actions: [
           IconButton(
             tooltip: 'Atualizar dados',
@@ -126,7 +149,7 @@ class _Content extends StatelessWidget {
             body: warnings == null
                 ? 'Sem dados de avisos.'
                 : warnings.isEmpty
-                    ? 'Nenhum aviso ativo para São Paulo.'
+                    ? 'Nenhum aviso ativo para ${context.read<TerritoryProvider>().territory.name}.'
                     : '${warnings.length} aviso(s) ativo(s): '
                         '${warnings.map((w) => w.description).join(', ')}',
           ),
