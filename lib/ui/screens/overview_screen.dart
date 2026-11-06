@@ -98,6 +98,7 @@ class _Content extends StatelessWidget {
           _Tile(
             icon: Icons.thermostat,
             title: 'Clima hoje',
+            onTap: () => context.goNamed(Routes.climate),
             body: today == null
                 ? 'Sem dados de clima.'
                 : '${today.tempMin?.round()}° a ${today.tempMax?.round()}° · '
@@ -106,6 +107,7 @@ class _Content extends StatelessWidget {
           _Tile(
             icon: Icons.air,
             title: 'Qualidade do ar (PM2.5)',
+            onTap: () => context.goNamed(Routes.air),
             body: lastAir?.pm25 == null
                 ? 'Sem dados do ar.'
                 : '${lastAir!.pm25!.toStringAsFixed(1)} µg/m³',
@@ -113,6 +115,7 @@ class _Content extends StatelessWidget {
           _Tile(
             icon: Icons.warning_amber,
             title: 'Avisos oficiais (INMET)',
+            onTap: () => context.goNamed(Routes.risks),
             body: warnings == null
                 ? 'Sem dados de avisos.'
                 : warnings.isEmpty
@@ -134,23 +137,33 @@ class _Content extends StatelessWidget {
 }
 
 class _Tile extends StatelessWidget {
-  const _Tile({required this.icon, required this.title, required this.body});
+  const _Tile({
+    required this.icon,
+    required this.title,
+    required this.body,
+    this.onTap,
+  });
 
   final IconData icon;
   final String title;
   final String body;
 
+  /// Quando informado, o cartão abre o dashboard correspondente.
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
     return Semantics(
       container: true,
-      label: '$title: $body',
+      label: onTap == null ? '$title: $body' : '$title: $body. Toque para abrir.',
       child: Card(
         margin: const EdgeInsets.only(bottom: 12),
         child: ListTile(
           leading: ExcludeSemantics(child: Icon(icon)),
           title: Text(title),
           subtitle: Text(body),
+          trailing: onTap == null ? null : const Icon(Icons.chevron_right),
+          onTap: onTap,
         ),
       ),
     );

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/air_reading.dart';
+import '../models/city_boundary.dart';
 import '../models/official_warning.dart';
 import '../models/territory_snapshot.dart';
 import '../models/weather.dart';
@@ -50,12 +51,14 @@ class TerritoryRepository {
       _load('air', _api.airQuality),
       _load('warnings', _api.warnings),
       _load('population', _api.population),
+      _load('boundary', _api.boundary),
     ]);
     final forecast = results[0];
     final history = results[1];
     final air = results[2];
     final warnings = results[3];
     final population = results[4];
+    final boundary = results[5];
 
     final used = results.whereType<_Fetched>().toList();
     final oldest = used.isEmpty
@@ -79,6 +82,9 @@ class TerritoryRepository {
                 OfficialWarning.fromJson(w as Map<String, dynamic>),
             ],
       population: population == null ? null : population.data as int,
+      boundary: boundary == null
+          ? null
+          : CityBoundary.fromGeoJson(boundary.data as Map<String, dynamic>),
       usedCache: used.any((f) => f.fromCache),
       updatedAt: oldest,
     );

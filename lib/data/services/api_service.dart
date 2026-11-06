@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
 
@@ -71,6 +73,16 @@ class ApiService {
     );
     // O item 0 é o cabeçalho; o item 1 traz o valor em "V".
     return int.parse((r.data![1] as Map<String, dynamic>)['V'].toString());
+  }
+
+  /// Contorno do município (malha do IBGE, GeoJSON).
+  Future<Map<String, dynamic>> boundary() async {
+    final r = await _dio.get<String>(
+      'https://servicodados.ibge.gov.br/api/v3/malhas/municipios/'
+      '${Territory.ibgeCode}?formato=application/vnd.geo+json',
+      options: Options(responseType: ResponseType.plain),
+    );
+    return jsonDecode(r.data!) as Map<String, dynamic>;
   }
 
   /// Avisos ativos do INMET filtrados pelo código IBGE do município.

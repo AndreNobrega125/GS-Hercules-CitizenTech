@@ -1,4 +1,5 @@
 import 'air_reading.dart';
+import 'city_boundary.dart';
 import 'official_warning.dart';
 import 'weather.dart';
 
@@ -11,6 +12,7 @@ class TerritorySnapshot {
     this.air,
     this.warnings,
     this.population,
+    this.boundary,
     this.usedCache = false,
     this.updatedAt,
   });
@@ -20,6 +22,7 @@ class TerritorySnapshot {
   final List<AirReading>? air;
   final List<OfficialWarning>? warnings;
   final int? population;
+  final CityBoundary? boundary;
 
   /// Alguma parte veio do cache local (sem conexão ou falha da API).
   final bool usedCache;

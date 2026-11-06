@@ -29,7 +29,28 @@ void _stubOnline(_MockApi api) {
   when(api.airQuality).thenAnswer((_) async => _air);
   when(api.warnings).thenAnswer((_) async => []);
   when(api.population).thenAnswer((_) async => 11911337);
+  when(api.boundary).thenAnswer((_) async => _geo);
 }
+
+const _geo = {
+  'type': 'FeatureCollection',
+  'features': [
+    {
+      'type': 'Feature',
+      'geometry': {
+        'type': 'Polygon',
+        'coordinates': [
+          [
+            [-46.7, -23.6],
+            [-46.6, -23.6],
+            [-46.6, -23.5],
+            [-46.7, -23.6],
+          ],
+        ],
+      },
+    },
+  ],
+};
 
 void main() {
   test('online: carrega tudo sem usar cache', () async {
@@ -45,6 +66,7 @@ void main() {
     expect(snap.air!.first.pm25, 39.7);
     expect(snap.warnings, isEmpty);
     expect(snap.population, 11911337);
+    expect(snap.boundary!.rings.single.first.latitude, -23.6);
   });
 
   test('offline: usa o cache salvo na última carga', () async {
@@ -60,12 +82,14 @@ void main() {
     when(offline.airQuality).thenThrow(Exception('sem rede'));
     when(offline.warnings).thenThrow(Exception('sem rede'));
     when(offline.population).thenThrow(Exception('sem rede'));
+    when(offline.boundary).thenThrow(Exception('sem rede'));
 
     final snap = await TerritoryRepository(offline, prefs).load();
 
     expect(snap.usedCache, isTrue);
     expect(snap.isEmpty, isFalse);
     expect(snap.population, 11911337);
+    expect(snap.boundary, isNotNull);
   });
 
   test('sem rede e sem cache: snapshot vazio', () async {
@@ -76,6 +100,7 @@ void main() {
     when(api.airQuality).thenThrow(Exception('sem rede'));
     when(api.warnings).thenThrow(Exception('sem rede'));
     when(api.population).thenThrow(Exception('sem rede'));
+    when(api.boundary).thenThrow(Exception('sem rede'));
     final repo = TerritoryRepository(api, await SharedPreferences.getInstance());
 
     final snap = await repo.load();
