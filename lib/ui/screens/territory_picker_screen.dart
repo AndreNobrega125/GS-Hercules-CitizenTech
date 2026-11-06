@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/territory.dart';
 import '../../data/models/locality.dart';
 import '../../state/territory_provider.dart';
+import '../../state/user_data_provider.dart';
 
 /// Escolha de estado (UF) e município monitorado.
 class TerritoryPickerScreen extends StatefulWidget {
@@ -85,6 +86,7 @@ class _TerritoryPickerScreenState extends State<TerritoryPickerScreen> {
   @override
   Widget build(BuildContext context) {
     final current = context.watch<TerritoryProvider>().territory;
+    final userData = context.watch<UserDataProvider>();
     final q = _query.trim().toLowerCase();
     final filtered = _cities
         ?.where((c) => q.isEmpty || c.nome.toLowerCase().contains(q))
@@ -101,6 +103,24 @@ class _TerritoryPickerScreenState extends State<TerritoryPickerScreen> {
               'Monitorando: ${current.label}',
               style: Theme.of(context).textTheme.titleMedium,
             ),
+            if (userData.favorites.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text('Favoritos', style: Theme.of(context).textTheme.labelLarge),
+              Wrap(
+                spacing: 8,
+                children: [
+                  for (final f in userData.favorites)
+                    ActionChip(
+                      avatar: const Icon(Icons.star, size: 18),
+                      label: Text(f.label),
+                      onPressed: () {
+                        context.read<TerritoryProvider>().changeTerritory(f);
+                        context.pop();
+                      },
+                    ),
+                ],
+              ),
+            ],
             const SizedBox(height: 12),
             if (_states != null)
               DropdownButtonFormField<String>(
@@ -161,9 +181,23 @@ class _TerritoryPickerScreenState extends State<TerritoryPickerScreen> {
                                 final selected = m.ibgeCode == current.ibgeCode;
                                 return ListTile(
                                   title: Text(m.nome),
-                                  trailing: selected
-                                      ? const Icon(Icons.check_circle)
-                                      : null,
+                                  trailing: IconButton(
+                                    tooltip: userData.isFavorite(m.ibgeCode)
+                                        ? 'Remover ${m.nome} dos favoritos'
+                                        : 'Favoritar ${m.nome}',
+                                    icon: Icon(
+                                      userData.isFavorite(m.ibgeCode)
+                                          ? Icons.star
+                                          : Icons.star_border,
+                                    ),
+                                    onPressed: () => userData.toggleFavorite(
+                                      Territory(
+                                        ibgeCode: m.ibgeCode,
+                                        name: m.nome,
+                                        uf: _uf!,
+                                      ),
+                                    ),
+                                  ),
                                   selected: selected,
                                   onTap: () => _select(m),
                                 );

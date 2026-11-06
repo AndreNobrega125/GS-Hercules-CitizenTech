@@ -10,6 +10,7 @@ import 'data/repositories/territory_repository.dart';
 import 'data/services/api_service.dart';
 import 'state/auth_provider.dart';
 import 'state/settings_provider.dart';
+import 'state/user_data_provider.dart';
 import 'state/territory_provider.dart';
 
 Future<void> main() async {
@@ -24,6 +25,7 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => SettingsProvider(prefs)),
         ChangeNotifierProvider.value(value: auth),
+        ChangeNotifierProvider(create: (_) => UserDataProvider(prefs, auth.user)),
         ChangeNotifierProvider(
           create: (_) => TerritoryProvider(repository, prefs, auth.user)..load(),
         ),

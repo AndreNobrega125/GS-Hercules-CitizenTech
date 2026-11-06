@@ -162,6 +162,12 @@ class _Content extends StatelessWidget {
             onTap: () => context.pushNamed(Routes.alerts),
           ),
           _Tile(
+            icon: Icons.edit_note,
+            title: 'Ocorrências',
+            body: 'Registre problemas do seu território, de forma anônima.',
+            onTap: () => context.pushNamed(Routes.occurrences),
+          ),
+          _Tile(
             icon: Icons.groups,
             title: 'População (IBGE)',
             body: snapshot.population == null

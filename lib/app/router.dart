@@ -10,10 +10,12 @@ import '../ui/screens/alerts_screen.dart';
 import '../ui/screens/climate_screen.dart';
 import '../ui/screens/consent_screen.dart';
 import '../ui/screens/login_screen.dart';
+import '../ui/screens/occurrences_screen.dart';
 import '../ui/screens/overview_screen.dart';
 import '../ui/screens/risks_screen.dart';
 import '../ui/screens/settings_screen.dart';
 import '../ui/screens/territory_picker_screen.dart';
+import '../ui/screens/thresholds_screen.dart';
 
 /// Rotas nomeadas do app.
 class Routes {
@@ -29,6 +31,9 @@ class Routes {
   static const alertDetail = 'alert-detail';
   static const settings = 'settings';
   static const territory = 'territory';
+  static const thresholds = 'thresholds';
+  static const occurrences = 'occurrences';
+  static const occurrenceNew = 'occurrence-new';
 }
 
 GoRouter buildRouter(SettingsProvider settings, AuthProvider auth) {
@@ -85,6 +90,23 @@ GoRouter buildRouter(SettingsProvider settings, AuthProvider auth) {
                 name: Routes.alertDetail,
                 builder: (_, state) =>
                     AlertDetailScreen(alertId: state.pathParameters['id']!),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: 'thresholds',
+            name: Routes.thresholds,
+            builder: (_, _) => const ThresholdsScreen(),
+          ),
+          GoRoute(
+            path: 'occurrences',
+            name: Routes.occurrences,
+            builder: (_, _) => const OccurrencesScreen(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                name: Routes.occurrenceNew,
+                builder: (_, _) => const OccurrenceFormScreen(),
               ),
             ],
           ),

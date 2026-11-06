@@ -16,7 +16,8 @@ enum LoadStatus { loading, ready, error }
 class TerritoryProvider extends ChangeNotifier {
   TerritoryProvider(this.repository, this._prefs, [UserProfile? user])
       : _userId = user?.id,
-        _territory = _readSaved(_prefs, user);
+        _territory = _readSaved(_prefs, user),
+        _thresholds = _readThresholds(_prefs, user?.id);
 
   final TerritoryRepository repository;
   final SharedPreferences _prefs;
@@ -26,11 +27,15 @@ class TerritoryProvider extends ChangeNotifier {
   String get _key => 'u_${_userId}_territory';
 
   Territory _territory;
+  AlertThresholds _thresholds;
   LoadStatus _status = LoadStatus.loading;
   TerritorySnapshot? _snapshot;
   List<TerritoryAlert> _alerts = const [];
 
   Territory get territory => _territory;
+
+  /// Limiares de alerta do perfil ativo.
+  AlertThresholds get thresholds => _thresholds;
   LoadStatus get status => _status;
   TerritorySnapshot? get snapshot => _snapshot;
 
@@ -55,10 +60,35 @@ class TerritoryProvider extends ChangeNotifier {
     }
   }
 
+  static AlertThresholds _readThresholds(SharedPreferences prefs, String? id) {
+    final raw = id == null ? null : prefs.getString('u_${id}_thresholds');
+    if (raw == null) return AlertThresholds.defaults;
+    try {
+      return AlertThresholds.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      return AlertThresholds.defaults;
+    }
+  }
+
+  /// Salva os limiares do perfil e recalcula os alertas com os dados atuais.
+  Future<void> setThresholds(AlertThresholds next) async {
+    _thresholds = next;
+    if (_userId != null) {
+      await _prefs.setString(
+        'u_${_userId}_thresholds',
+        jsonEncode(next.toJson()),
+      );
+    }
+    final snap = _snapshot;
+    if (snap != null) _alerts = AlertEngine.generate(snap, thresholds: next);
+    notifyListeners();
+  }
+
   /// Troca o perfil ativo: abre o último município dele (ou o inicial) e recarrega.
   Future<void> useUser(UserProfile user) async {
     _userId = user.id;
     _territory = _readSaved(_prefs, user);
+    _thresholds = _readThresholds(_prefs, user.id);
     _snapshot = null;
     _alerts = const [];
     await load();
@@ -85,7 +115,7 @@ class TerritoryProvider extends ChangeNotifier {
       // Descarta o resultado se o usuário trocou de município no meio da carga.
       if (requested.ibgeCode != _territory.ibgeCode) return;
       _snapshot = snap;
-      _alerts = AlertEngine.generate(snap);
+      _alerts = AlertEngine.generate(snap, thresholds: _thresholds);
       _status = snap.isEmpty ? LoadStatus.error : LoadStatus.ready;
     } catch (_) {
       if (requested.ibgeCode != _territory.ibgeCode) return;

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/router.dart';
 import '../../state/auth_provider.dart';
 import '../../state/settings_provider.dart';
+import '../../state/user_data_provider.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -26,11 +29,29 @@ class SettingsScreen extends StatelessWidget {
                 trailing: TextButton.icon(
                   icon: const Icon(Icons.logout),
                   label: const Text('Sair'),
-                  onPressed: () => context.read<AuthProvider>().logout(),
+                  onPressed: () {
+                    context.read<UserDataProvider>().clear();
+                    context.read<AuthProvider>().logout();
+                  },
                 ),
               ),
             ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          ListTile(
+            leading: const Icon(Icons.tune),
+            title: const Text('Limiares de alerta'),
+            subtitle: const Text('Chuva, calor e poluição do ar'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.pushNamed(Routes.thresholds),
+          ),
+          ListTile(
+            leading: const Icon(Icons.edit_note),
+            title: const Text('Ocorrências'),
+            subtitle: const Text('Registros anônimos salvos neste aparelho'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.pushNamed(Routes.occurrences),
+          ),
+          const SizedBox(height: 8),
           Text('Tema', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           SegmentedButton<ThemeMode>(

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../state/auth_provider.dart';
 import '../../state/territory_provider.dart';
+import '../../state/user_data_provider.dart';
 
 /// Login simulado com dois perfis de demonstração.
 class LoginScreen extends StatefulWidget {
@@ -34,6 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     final auth = context.read<AuthProvider>();
     final territory = context.read<TerritoryProvider>();
+    final userData = context.read<UserDataProvider>();
     setState(() {
       _busy = true;
       _error = null;
@@ -42,6 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
     if (ok) {
       // O roteador leva ao app; aqui só carregamos os dados do perfil.
+      userData.useUser(auth.user!);
       await territory.useUser(auth.user!);
     } else {
       setState(() {

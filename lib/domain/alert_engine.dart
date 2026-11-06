@@ -22,6 +22,29 @@ class AlertThresholds {
   final double pm25High;
   final double heatAttentionC;
   final double heatHighC;
+
+  static const defaults = AlertThresholds();
+
+  Map<String, dynamic> toJson() => {
+        'rainAttentionMm': rainAttentionMm,
+        'rainHighMm': rainHighMm,
+        'pm25Attention': pm25Attention,
+        'pm25High': pm25High,
+        'heatAttentionC': heatAttentionC,
+        'heatHighC': heatHighC,
+      };
+
+  factory AlertThresholds.fromJson(Map<String, dynamic> j) {
+    double v(String k, double d) => (j[k] as num?)?.toDouble() ?? d;
+    return AlertThresholds(
+      rainAttentionMm: v('rainAttentionMm', 30),
+      rainHighMm: v('rainHighMm', 50),
+      pm25Attention: v('pm25Attention', 25),
+      pm25High: v('pm25High', 50),
+      heatAttentionC: v('heatAttentionC', 34),
+      heatHighC: v('heatHighC', 37),
+    );
+  }
 }
 
 /// Gera os alertas a partir dos avisos oficiais e de regras sobre os dados.
