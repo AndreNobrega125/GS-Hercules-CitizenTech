@@ -1,11 +1,15 @@
 ﻿import 'package:go_router/go_router.dart';
 
+import 'package:flutter/foundation.dart';
+
+import '../state/auth_provider.dart';
 import '../state/settings_provider.dart';
 import '../ui/screens/air_screen.dart';
 import '../ui/screens/alert_detail_screen.dart';
 import '../ui/screens/alerts_screen.dart';
 import '../ui/screens/climate_screen.dart';
 import '../ui/screens/consent_screen.dart';
+import '../ui/screens/login_screen.dart';
 import '../ui/screens/overview_screen.dart';
 import '../ui/screens/risks_screen.dart';
 import '../ui/screens/settings_screen.dart';
@@ -16,6 +20,7 @@ class Routes {
   Routes._();
 
   static const consent = 'consent';
+  static const login = 'login';
   static const overview = 'overview';
   static const climate = 'climate';
   static const air = 'air';
@@ -26,17 +31,24 @@ class Routes {
   static const territory = 'territory';
 }
 
-GoRouter buildRouter(SettingsProvider settings) {
+GoRouter buildRouter(SettingsProvider settings, AuthProvider auth) {
   return GoRouter(
     initialLocation: '/',
-    refreshListenable: settings,
+    refreshListenable: Listenable.merge([settings, auth]),
+    // Deny-by-default: sem consentimento vai ao termo; sem sessão, ao login.
     redirect: (context, state) {
-      final atConsent = state.matchedLocation == '/consent';
-      if (!settings.consentGiven && !atConsent) return '/consent';
-      if (settings.consentGiven && atConsent) return '/';
+      final at = state.matchedLocation;
+      if (!settings.consentGiven) return at == '/consent' ? null : '/consent';
+      if (!auth.loggedIn) return at == '/login' ? null : '/login';
+      if (at == '/consent' || at == '/login') return '/';
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/login',
+        name: Routes.login,
+        builder: (_, _) => const LoginScreen(),
+      ),
       GoRoute(
         path: '/consent',
         name: Routes.consent,

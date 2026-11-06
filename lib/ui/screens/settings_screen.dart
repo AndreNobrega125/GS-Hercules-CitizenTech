@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../state/auth_provider.dart';
 import '../../state/settings_provider.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -9,11 +10,27 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsProvider>();
+    final user = context.watch<AuthProvider>().user;
     return Scaffold(
       appBar: AppBar(title: const Text('Configurações')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          if (user != null)
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.account_circle),
+                title: Text(user.name),
+                subtitle: Text('${user.role}\n${user.email}'),
+                isThreeLine: true,
+                trailing: TextButton.icon(
+                  icon: const Icon(Icons.logout),
+                  label: const Text('Sair'),
+                  onPressed: () => context.read<AuthProvider>().logout(),
+                ),
+              ),
+            ),
+          const SizedBox(height: 16),
           Text('Tema', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           SegmentedButton<ThemeMode>(

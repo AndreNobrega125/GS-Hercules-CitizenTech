@@ -8,6 +8,7 @@ import 'app/router.dart';
 import 'core/theme/app_theme.dart';
 import 'data/repositories/territory_repository.dart';
 import 'data/services/api_service.dart';
+import 'state/auth_provider.dart';
 import 'state/settings_provider.dart';
 import 'state/territory_provider.dart';
 
@@ -17,12 +18,14 @@ Future<void> main() async {
   Intl.defaultLocale = 'pt_BR';
   final prefs = await SharedPreferences.getInstance();
   final repository = TerritoryRepository(ApiService(), prefs);
+  final auth = AuthProvider(prefs);
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => SettingsProvider(prefs)),
+        ChangeNotifierProvider.value(value: auth),
         ChangeNotifierProvider(
-          create: (_) => TerritoryProvider(repository, prefs)..load(),
+          create: (_) => TerritoryProvider(repository, prefs, auth.user)..load(),
         ),
       ],
       child: const RadarApp(),
@@ -38,7 +41,10 @@ class RadarApp extends StatefulWidget {
 }
 
 class _RadarAppState extends State<RadarApp> {
-  late final _router = buildRouter(context.read<SettingsProvider>());
+  late final _router = buildRouter(
+    context.read<SettingsProvider>(),
+    context.read<AuthProvider>(),
+  );
 
   @override
   Widget build(BuildContext context) {

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/territory.dart';
 import '../data/models/territory_snapshot.dart';
+import '../data/models/user_profile.dart';
 import '../data/repositories/territory_repository.dart';
 import '../domain/alert_engine.dart';
 import '../domain/territory_alert.dart';
@@ -13,13 +14,16 @@ enum LoadStatus { loading, ready, error }
 
 /// Estado global dos dados do território, compartilhado entre as telas.
 class TerritoryProvider extends ChangeNotifier {
-  TerritoryProvider(this.repository, this._prefs)
-      : _territory = _readSaved(_prefs);
-
-  static const _kTerritory = 'territory';
+  TerritoryProvider(this.repository, this._prefs, [UserProfile? user])
+      : _userId = user?.id,
+        _territory = _readSaved(_prefs, user);
 
   final TerritoryRepository repository;
   final SharedPreferences _prefs;
+
+  /// Cada perfil guarda o próprio município (isolamento por dono).
+  String? _userId;
+  String get _key => 'u_${_userId}_territory';
 
   Territory _territory;
   LoadStatus _status = LoadStatus.loading;
@@ -40,14 +44,24 @@ class TerritoryProvider extends ChangeNotifier {
     return null;
   }
 
-  static Territory _readSaved(SharedPreferences prefs) {
-    final raw = prefs.getString(_kTerritory);
-    if (raw == null) return Territory.saoPaulo;
+  static Territory _readSaved(SharedPreferences prefs, UserProfile? user) {
+    if (user == null) return Territory.saoPaulo;
+    final raw = prefs.getString('u_${user.id}_territory');
+    if (raw == null) return user.home;
     try {
       return Territory.fromJson(jsonDecode(raw) as Map<String, dynamic>);
     } catch (_) {
-      return Territory.saoPaulo;
+      return user.home;
     }
+  }
+
+  /// Troca o perfil ativo: abre o último município dele (ou o inicial) e recarrega.
+  Future<void> useUser(UserProfile user) async {
+    _userId = user.id;
+    _territory = _readSaved(_prefs, user);
+    _snapshot = null;
+    _alerts = const [];
+    await load();
   }
 
   /// Troca o município monitorado, salva a escolha e recarrega os dados.
@@ -56,7 +70,9 @@ class TerritoryProvider extends ChangeNotifier {
     _territory = next;
     _snapshot = null;
     _alerts = const [];
-    await _prefs.setString(_kTerritory, jsonEncode(next.toJson()));
+    if (_userId != null) {
+      await _prefs.setString(_key, jsonEncode(next.toJson()));
+    }
     await load();
   }
 

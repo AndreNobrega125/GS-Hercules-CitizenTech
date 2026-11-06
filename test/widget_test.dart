@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:radar_territorio/main.dart';
 import 'package:provider/provider.dart';
+import 'package:radar_territorio/state/auth_provider.dart';
 import 'package:radar_territorio/state/settings_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -11,8 +12,11 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
 
     await tester.pumpWidget(
-      ChangeNotifierProvider(
-        create: (_) => SettingsProvider(prefs),
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => SettingsProvider(prefs)),
+          ChangeNotifierProvider(create: (_) => AuthProvider(prefs)),
+        ],
         child: const RadarApp(),
       ),
     );
