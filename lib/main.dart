@@ -4,14 +4,23 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/router.dart';
 import 'core/theme/app_theme.dart';
+import 'data/repositories/territory_repository.dart';
+import 'data/services/api_service.dart';
 import 'state/settings_provider.dart';
+import 'state/territory_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
+  final repository = TerritoryRepository(ApiService(), prefs);
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => SettingsProvider(prefs),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => SettingsProvider(prefs)),
+        ChangeNotifierProvider(
+          create: (_) => TerritoryProvider(repository)..load(),
+        ),
+      ],
       child: const RadarApp(),
     ),
   );
