@@ -2,7 +2,9 @@ import 'package:intl/intl.dart';
 
 import '../data/models/official_warning.dart';
 import '../data/models/territory_snapshot.dart';
+import '../data/models/weather.dart';
 import 'air_level.dart';
+import 'stats.dart';
 import 'territory_alert.dart';
 
 /// Limiares das regras próprias do app (valores padrão; ajustáveis depois).
@@ -65,6 +67,9 @@ class AlertEngine {
       ..._rain(snapshot, thresholds),
       ..._heat(snapshot, thresholds),
       ..._air(snapshot, thresholds, now ?? DateTime.now()),
+      ..._tempAnomaly(snapshot),
+      ..._tempTrend(snapshot),
+      ..._airProjection(snapshot, thresholds, now ?? DateTime.now()),
     ];
     alerts.sort((a, b) {
       final bySeverity = b.severity.index.compareTo(a.severity.index);
@@ -240,6 +245,160 @@ class AlertEngine {
       ],
       recommendations: const [
         'Orientação geral: pessoas sensíveis devem reduzir esforço físico ao ar livre.',
+      ],
+    );
+  }
+
+  // ------------------------------------------------------------ estatísticas
+
+  static const _statLimit =
+      'É estatística simples (não é aprendizado de máquina) sobre poucos dados.';
+
+  /// Dia previsto muito acima do padrão dos últimos 30 dias (z-score ≥ 2).
+  static Iterable<TerritoryAlert> _tempAnomaly(TerritorySnapshot s) sync* {
+    final base = [
+      for (final d in s.history ?? const <DailyWeather>[]) ?d.tempMax,
+    ];
+    final days = (s.forecast ?? const []).take(4).toList();
+    if (base.length < 15 || days.isEmpty) return;
+
+    var bestIndex = -1;
+    var bestZ = 0.0;
+    for (var i = 0; i < days.length; i++) {
+      final t = days[i].tempMax;
+      if (t == null) continue;
+      final z = zScore(t, base);
+      if (z != null && z > bestZ) {
+        bestZ = z;
+        bestIndex = i;
+      }
+    }
+    if (bestIndex < 0 || bestZ < 2) return;
+    final day = days[bestIndex];
+    final avg = mean(base);
+    // Evita alarme por diferença pequena quando a série quase não varia.
+    if (day.tempMax! - avg < 3) return;
+
+    final ahead = day.date.difference(days.first.date).inDays;
+    final fmt = DateFormat('dd/MM');
+    yield TerritoryAlert(
+      id: 'stat-temp-anomaly',
+      kind: AlertKind.heat,
+      severity: AlertSeverity.attention,
+      source: AlertSource.statistic,
+      title: 'Temperatura fora do padrão em ${fmt.format(day.date)}',
+      summary: 'Máxima de ${day.tempMax!.toStringAsFixed(0)} °C, '
+          '${bestZ.toStringAsFixed(1)} desvios acima do normal recente',
+      evidence: [
+        'Média das máximas dos últimos ${base.length} dias: ${avg.toStringAsFixed(1)} °C '
+            '(desvio padrão ${stdDev(base).toStringAsFixed(1)} °C).',
+        'Previsto para ${fmt.format(day.date)}: ${day.tempMax!.toStringAsFixed(1)} °C.',
+        'Z-score = (previsto - média) / desvio padrão = ${bestZ.toStringAsFixed(2)}; '
+            'o alerta dispara a partir de 2,0 e com pelo menos 3 °C acima da média.',
+      ],
+      confidence: ahead <= 3 ? AlertConfidence.medium : AlertConfidence.low,
+      confidenceReason:
+          'Base de ${base.length} dias e previsão para daqui a $ahead dia(s). '
+          'Confiança limitada à média.',
+      limitations: const [
+        _statLimit,
+        'Compara com os últimos 30 dias, não com a média histórica da estação do ano.',
+        'A previsão de temperatura tem erro que cresce com o prazo.',
+      ],
+      recommendations: const [
+        'Orientação geral: acompanhe a previsão e reforce a hidratação em grupos sensíveis.',
+      ],
+    );
+  }
+
+  /// Tendência de aquecimento nos últimos 30 dias (regressão linear).
+  static Iterable<TerritoryAlert> _tempTrend(TerritorySnapshot s) sync* {
+    final series = [
+      for (final d in s.history ?? const <DailyWeather>[]) ?d.tempMax,
+    ];
+    final fit = linearFit(series, minPoints: 20);
+    if (fit == null) return;
+    final change = fit.slope * (fit.n - 1);
+    if (change < 3 || fit.r2 < 0.3) return;
+
+    yield TerritoryAlert(
+      id: 'stat-temp-trend',
+      kind: AlertKind.heat,
+      severity: AlertSeverity.info,
+      source: AlertSource.statistic,
+      title: 'Temperatura em alta nos últimos ${fit.n} dias',
+      summary: '+${change.toStringAsFixed(1)} °C no período '
+          '(${(fit.slope).toStringAsFixed(2)} °C por dia)',
+      evidence: [
+        'Regressão linear das temperaturas máximas diárias (${fit.n} dias).',
+        'Inclinação: ${fit.slope.toStringAsFixed(2)} °C/dia; variação ajustada: '
+            '+${change.toStringAsFixed(1)} °C.',
+        'R² = ${fit.r2.toStringAsFixed(2)} (0 = reta não explica nada; 1 = explica tudo).',
+      ],
+      confidence: fit.r2 >= 0.6 ? AlertConfidence.medium : AlertConfidence.low,
+      confidenceReason:
+          'R² de ${fit.r2.toStringAsFixed(2)} em ${fit.n} pontos: '
+          '${fit.r2 >= 0.6 ? 'a reta explica boa parte da variação' : 'a reta explica pouco da variação'}.',
+      limitations: const [
+        _statLimit,
+        'Um mês não separa tendência de mudança normal de estação.',
+        'Uma onda de calor curta pode puxar a reta e não indicar mudança duradoura.',
+      ],
+      recommendations: const [
+        'Apenas informativo: use junto com a previsão dos próximos dias.',
+      ],
+    );
+  }
+
+  /// Projeta o PM2.5 das próximas 12 h (Holt) quando a tendência é de piora.
+  static Iterable<TerritoryAlert> _airProjection(
+    TerritorySnapshot s,
+    AlertThresholds t,
+    DateTime now,
+  ) sync* {
+    final readings = (s.air ?? const [])
+        .where((a) => a.pm25 != null && !a.time.isAfter(now))
+        .toList();
+    if (readings.length < 24) return;
+    final recent = [
+      for (final r in readings.sublist(readings.length - 24)) r.pm25!,
+    ];
+    final current = recent.last;
+    final projected = holtForecast(recent, 12);
+    final fit = linearFit(recent);
+    if (projected == null || fit == null) return;
+    // Se já está acima do limiar, a regra normal de ar cobre o caso.
+    if (current >= t.pm25Attention) return;
+    if (projected < t.pm25Attention || fit.slope <= 0) return;
+
+    yield TerritoryAlert(
+      id: 'stat-air-forecast',
+      kind: AlertKind.air,
+      severity:
+          projected >= t.pm25High ? AlertSeverity.high : AlertSeverity.attention,
+      source: AlertSource.statistic,
+      title: 'Ar pode piorar nas próximas 12 h (PM2.5)',
+      summary: 'De ${current.toStringAsFixed(1)} para cerca de '
+          '${projected.toStringAsFixed(1)} µg/m³',
+      evidence: [
+        'PM2.5 atual: ${current.toStringAsFixed(1)} µg/m³; últimas 24 h em alta '
+            '(${fit.slope.toStringAsFixed(2)} µg/m³ por hora).',
+        'Projeção por suavização exponencial dupla (Holt, α=0,5 e β=0,3) para 12 h: '
+            '${projected.toStringAsFixed(1)} µg/m³.',
+        'R² da tendência das 24 h = ${fit.r2.toStringAsFixed(2)}. '
+            'Limiar de atenção do app: ${t.pm25Attention.toStringAsFixed(0)} µg/m³.',
+      ],
+      confidence: fit.r2 >= 0.6 ? AlertConfidence.medium : AlertConfidence.low,
+      confidenceReason:
+          'Projeção a partir de 24 leituras; R² de ${fit.r2.toStringAsFixed(2)}. '
+          'Nunca é alta: o ar muda com vento e chuva.',
+      limitations: const [
+        _statLimit,
+        'Não considera vento, chuva, queimadas nem o ciclo diário do trânsito.',
+        'Os dados vêm de modelo atmosférico, não de estação de medição.',
+      ],
+      recommendations: const [
+        'Orientação geral: pessoas sensíveis podem antecipar atividades ao ar livre.',
       ],
     );
   }

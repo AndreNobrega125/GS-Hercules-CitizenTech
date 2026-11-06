@@ -31,7 +31,8 @@ enum AlertConfidence {
 
 enum AlertSource {
   official('Aviso oficial (INMET)'),
-  rule('Regra do app');
+  rule('Regra do app'),
+  statistic('Análise estatística');
 
   const AlertSource(this.label);
   final String label;

@@ -68,7 +68,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
             segments: const [
               ButtonSegment(value: null, label: Text('Todas')),
               ButtonSegment(value: AlertSource.official, label: Text('Oficiais')),
-              ButtonSegment(value: AlertSource.rule, label: Text('Regras do app')),
+              ButtonSegment(value: AlertSource.rule, label: Text('Regras')),
+              ButtonSegment(value: AlertSource.statistic, label: Text('Estatística')),
             ],
             selected: {_source},
             onSelectionChanged: (s) => setState(() => _source = s.first),
