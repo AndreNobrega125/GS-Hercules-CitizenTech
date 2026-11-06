@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../app/router.dart';
 import '../../data/models/territory_snapshot.dart';
+import '../../domain/social_indicator.dart';
 import '../../state/territory_provider.dart';
 import '../widgets/alert_banner.dart';
 
@@ -105,6 +106,7 @@ class _Content extends StatelessWidget {
     );
     final warnings = snapshot.warnings;
     final alerts = context.watch<TerritoryProvider>().alerts;
+    final social = SocialIndicator.from(snapshot.population, alerts);
     final stamp = snapshot.updatedAt == null
         ? ''
         : DateFormat('dd/MM HH:mm').format(snapshot.updatedAt!);
@@ -161,6 +163,18 @@ class _Content extends StatelessWidget {
                 : '${alerts.length} alerta(s) com justificativa e confiança.',
             onTap: () => context.pushNamed(Routes.alerts),
           ),
+          if (social != null)
+            _Tile(
+              icon: Icons.volunteer_activism,
+              title: 'Benefício social',
+              body: social.hasAlerts
+                  ? '${NumberFormat.decimalPattern('pt_BR').format(social.population)} '
+                      'pessoas com alerta ativo (${social.alertCount} alerta(s))'
+                      '${social.maxLeadDays == null ? '' : ', com até ${social.maxLeadDays} dia(s) de antecedência'}. '
+                      'Estimativa: o alerta vale para o município inteiro; '
+                      'nem todos são atingidos do mesmo modo.'
+                  : 'Nenhum alerta ativo: ninguém precisa de ação agora.',
+            ),
           _Tile(
             icon: Icons.edit_note,
             title: 'Ocorrências',

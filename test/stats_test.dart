@@ -3,6 +3,7 @@ import 'package:radar_territorio/data/models/air_reading.dart';
 import 'package:radar_territorio/data/models/territory_snapshot.dart';
 import 'package:radar_territorio/data/models/weather.dart';
 import 'package:radar_territorio/domain/alert_engine.dart';
+import 'package:radar_territorio/domain/social_indicator.dart';
 import 'package:radar_territorio/domain/stats.dart';
 import 'package:radar_territorio/domain/territory_alert.dart';
 
@@ -14,6 +15,35 @@ DailyWeather _day(DateTime start, int i, double tMax) => DailyWeather(
     );
 
 void main() {
+  group('SocialIndicator', () {
+    TerritoryAlert alert(int? lead) => TerritoryAlert(
+          id: 'x$lead',
+          kind: AlertKind.rain,
+          severity: AlertSeverity.attention,
+          source: AlertSource.rule,
+          title: 't',
+          summary: 's',
+          evidence: const [],
+          confidence: AlertConfidence.medium,
+          confidenceReason: 'r',
+          limitations: const [],
+          recommendations: const [],
+          leadDays: lead,
+        );
+
+    test('com alertas: cobre a população e usa a maior antecedência', () {
+      final i = SocialIndicator.from(1000, [alert(1), alert(3), alert(null)])!;
+      expect(i.population, 1000);
+      expect(i.alertCount, 3);
+      expect(i.maxLeadDays, 3);
+      expect(i.hasAlerts, isTrue);
+    });
+    test('sem alertas: ninguém coberto; sem população: sem indicador', () {
+      expect(SocialIndicator.from(1000, const [])!.population, 0);
+      expect(SocialIndicator.from(null, [alert(1)]), isNull);
+    });
+  });
+
   group('linearFit', () {
     test('reta perfeita: inclinação, intercepto e R² = 1', () {
       final fit = linearFit([1, 3, 5, 7, 9, 11])!;

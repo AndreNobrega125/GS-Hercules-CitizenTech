@@ -163,6 +163,7 @@ class AlertEngine {
         ],
         confidence: _byHorizon(ahead),
         confidenceReason: _horizonText(ahead),
+        leadDays: ahead,
         limitations: const [
           'Modelo global com resolução de alguns quilômetros: não capta chuva localizada por bairro.',
           'O total diário não diz a que horas a chuva cai.',
@@ -203,6 +204,7 @@ class AlertEngine {
       ],
       confidence: _byHorizon(ahead),
       confidenceReason: _horizonText(ahead),
+      leadDays: ahead,
       limitations: const [
         'A temperatura é do modelo para a região, não de um ponto específico da cidade.',
         'Ilhas de calor urbanas podem deixar alguns locais mais quentes que a previsão.',
@@ -296,6 +298,7 @@ class AlertEngine {
         'Z-score = (previsto - média) / desvio padrão = ${bestZ.toStringAsFixed(2)}; '
             'o alerta dispara a partir de 2,0 e com pelo menos 3 °C acima da média.',
       ],
+      leadDays: ahead,
       confidence: ahead <= 3 ? AlertConfidence.medium : AlertConfidence.low,
       confidenceReason:
           'Base de ${base.length} dias e previsão para daqui a $ahead dia(s). '

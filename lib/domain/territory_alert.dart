@@ -52,6 +52,7 @@ class TerritoryAlert {
     required this.confidenceReason,
     required this.limitations,
     required this.recommendations,
+    this.leadDays,
   });
 
   final String id;
@@ -69,4 +70,7 @@ class TerritoryAlert {
   /// Quando e por que o alerta pode estar errado ou incompleto.
   final List<String> limitations;
   final List<String> recommendations;
+
+  /// Dias entre hoje e o evento previsto (só alertas com data prevista).
+  final int? leadDays;
 }
