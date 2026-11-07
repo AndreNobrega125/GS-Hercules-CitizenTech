@@ -112,6 +112,7 @@ class _OccurrenceFormScreenState extends State<OccurrenceFormScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<OccurrenceType>(
+              isExpanded: true,
               initialValue: _type,
               decoration: const InputDecoration(
                 labelText: 'Tipo de ocorrência',

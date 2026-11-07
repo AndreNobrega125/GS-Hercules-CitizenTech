@@ -124,6 +124,7 @@ class _TerritoryPickerScreenState extends State<TerritoryPickerScreen> {
             const SizedBox(height: 12),
             if (_states != null)
               DropdownButtonFormField<String>(
+                isExpanded: true,
                 initialValue: _uf,
                 decoration: const InputDecoration(
                   labelText: 'Estado',

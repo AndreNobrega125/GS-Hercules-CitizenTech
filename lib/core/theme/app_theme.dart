@@ -31,6 +31,10 @@ class AppTheme {
         color: scheme.surfaceContainerHighest,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
+      // O primário puro fica abaixo de 4,5:1 sobre o fundo dos cards (WCAG AA).
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: scheme.onPrimaryContainer),
+      ),
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
