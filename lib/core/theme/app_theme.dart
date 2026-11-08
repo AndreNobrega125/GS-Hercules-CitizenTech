@@ -31,9 +31,14 @@ class AppTheme {
         color: scheme.surfaceContainerHighest,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
-      // O primário puro fica abaixo de 4,5:1 sobre o fundo dos cards (WCAG AA).
+      // No tema normal, o primário puro fica abaixo de 4,5:1 sobre o fundo dos
+      // cards (WCAG AA). No alto contraste o primário já é escuro o bastante,
+      // e onPrimaryContainer (claro) ficaria quase invisível sobre o card claro.
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(foregroundColor: scheme.onPrimaryContainer),
+        style: TextButton.styleFrom(
+          foregroundColor:
+              contrast >= 1.0 ? scheme.primary : scheme.onPrimaryContainer,
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
