@@ -171,7 +171,12 @@ class _PmChart extends StatelessWidget {
             rightTitles: AxisTitles(),
             bottomTitles: AxisTitles(),
             leftTitles: AxisTitles(
-              sideTitles: SideTitles(showTitles: true, reservedSize: 32),
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 32,
+                minIncluded: false,
+                maxIncluded: false,
+              ),
             ),
           ),
         ),

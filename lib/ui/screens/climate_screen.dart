@@ -137,7 +137,12 @@ class _RainChart extends StatelessWidget {
             topTitles: const AxisTitles(),
             rightTitles: const AxisTitles(),
             leftTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: true, reservedSize: 32),
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 32,
+                minIncluded: false,
+                maxIncluded: false,
+              ),
             ),
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
@@ -205,7 +210,12 @@ class _TempChart extends StatelessWidget {
             rightTitles: AxisTitles(),
             bottomTitles: AxisTitles(),
             leftTitles: AxisTitles(
-              sideTitles: SideTitles(showTitles: true, reservedSize: 32),
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 32,
+                minIncluded: false,
+                maxIncluded: false,
+              ),
             ),
           ),
         ),
