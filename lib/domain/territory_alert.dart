@@ -53,6 +53,7 @@ class TerritoryAlert {
     required this.limitations,
     required this.recommendations,
     this.leadDays,
+    this.pastDate,
   });
 
   final String id;
@@ -73,4 +74,10 @@ class TerritoryAlert {
 
   /// Dias entre hoje e o evento previsto (só alertas com data prevista).
   final int? leadDays;
+
+  /// Dia em que o evento aconteceu, quando é um alerta de data antiga
+  /// (histórico dos últimos 7 dias). `null` nos alertas ativos.
+  final DateTime? pastDate;
+
+  bool get isPast => pastDate != null;
 }

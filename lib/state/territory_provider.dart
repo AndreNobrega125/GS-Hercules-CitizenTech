@@ -31,6 +31,7 @@ class TerritoryProvider extends ChangeNotifier {
   LoadStatus _status = LoadStatus.loading;
   TerritorySnapshot? _snapshot;
   List<TerritoryAlert> _alerts = const [];
+  List<TerritoryAlert> _pastAlerts = const [];
 
   Territory get territory => _territory;
 
@@ -42,8 +43,12 @@ class TerritoryProvider extends ChangeNotifier {
   /// Alertas ordenados do mais grave para o menos grave.
   List<TerritoryAlert> get alerts => _alerts;
 
+  /// Alertas de datas antigas (últimos 7 dias), do mais recente ao mais antigo.
+  /// Não são alertas ativos e não entram no indicador de benefício social.
+  List<TerritoryAlert> get pastAlerts => _pastAlerts;
+
   TerritoryAlert? alertById(String id) {
-    for (final a in _alerts) {
+    for (final a in [..._alerts, ..._pastAlerts]) {
       if (a.id == id) return a;
     }
     return null;
@@ -80,7 +85,10 @@ class TerritoryProvider extends ChangeNotifier {
       );
     }
     final snap = _snapshot;
-    if (snap != null) _alerts = AlertEngine.generate(snap, thresholds: next);
+    if (snap != null) {
+      _alerts = AlertEngine.generate(snap, thresholds: next);
+      _pastAlerts = AlertEngine.generatePast(snap, thresholds: next);
+    }
     notifyListeners();
   }
 
@@ -91,6 +99,7 @@ class TerritoryProvider extends ChangeNotifier {
     _thresholds = _readThresholds(_prefs, user.id);
     _snapshot = null;
     _alerts = const [];
+    _pastAlerts = const [];
     await load();
   }
 
@@ -100,6 +109,7 @@ class TerritoryProvider extends ChangeNotifier {
     _territory = next;
     _snapshot = null;
     _alerts = const [];
+    _pastAlerts = const [];
     if (_userId != null) {
       await _prefs.setString(_key, jsonEncode(next.toJson()));
     }
@@ -116,6 +126,7 @@ class TerritoryProvider extends ChangeNotifier {
       if (requested.ibgeCode != _territory.ibgeCode) return;
       _snapshot = snap;
       _alerts = AlertEngine.generate(snap, thresholds: _thresholds);
+      _pastAlerts = AlertEngine.generatePast(snap, thresholds: _thresholds);
       _status = snap.isEmpty ? LoadStatus.error : LoadStatus.ready;
     } catch (_) {
       if (requested.ibgeCode != _territory.ibgeCode) return;

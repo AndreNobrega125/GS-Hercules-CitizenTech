@@ -10,7 +10,7 @@
 ![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.12-0175C2?logo=dart&logoColor=white)
 ![Plataformas](https://img.shields.io/badge/Android%20%7C%20Windows-teal)
-![Testes](https://img.shields.io/badge/testes-94%20passando-brightgreen)
+![Testes](https://img.shields.io/badge/testes-101%20passando-brightgreen)
 ![Licença](https://img.shields.io/badge/uso-acad%C3%AAmico-lightgrey)
 
 Global Solution 2026.2 · FIAP · Cross-Platform Application Development
@@ -97,6 +97,7 @@ Desafio **Territory Predictive Insights**
 - [x] Alertas por regras, por estatística e por avisos oficiais do INMET
 - [x] Cada alerta traz justificativa, evidências, nível de confiança, limitações e recomendações
 - [x] Aviso visível: os alertas **apoiam, mas não substituem, a decisão humana**
+- [x] Alertas de datas antigas: as mesmas regras aplicadas aos últimos 7 dias, em seção própria e marcados como "Data antiga" (não são alertas ativos)
 - [x] Indicador de benefício social (população coberta × alertas × antecedência)
 
 **Dados e estado**
@@ -139,6 +140,7 @@ O motor fica em `lib/domain/alert_engine.dart` e combina três tipos de alerta:
 - Contorno e população são do município inteiro; riscos locais (encostas, alagamentos pontuais) não aparecem.
 - Sem internet, o app mostra o último dado baixado, que pode estar desatualizado, e exibe o aviso "Modo offline".
 - As ocorrências registradas ficam no aparelho e não alimentam os alertas.
+- Os alertas de datas antigas usam o histórico do Open-Meteo, que atrasa cerca de 2 dias; por isso o dia de hoje e o de ontem nem sempre aparecem.
 
 ## 🔒 6. Privacidade e inclusão
 

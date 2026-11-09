@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../domain/territory_alert.dart';
@@ -40,11 +41,30 @@ class _Detail extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        if (alert.isPast)
+          Card(
+            color: Theme.of(context).colorScheme.tertiaryContainer,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Semantics(
+                container: true,
+                child: Text(
+                  'Data antiga: este evento aconteceu em '
+                  '${DateFormat('dd/MM/yyyy').format(alert.pastDate!)} e já passou. '
+                  'Não é um alerta ativo; fica aqui só como histórico.',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onTertiaryContainer,
+                  ),
+                ),
+              ),
+            ),
+          ),
         Text(alert.title, style: text.headlineSmall),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
           children: [
+            if (alert.isPast) const Chip(label: Text('Data antiga')),
             Chip(
               backgroundColor: style.background,
               avatar: Icon(style.icon, size: 18, color: style.foreground),

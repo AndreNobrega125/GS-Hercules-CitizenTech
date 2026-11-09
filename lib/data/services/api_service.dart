@@ -96,7 +96,7 @@ class ApiService {
         'latitude': lat,
         'longitude': lon,
         'hourly': 'pm2_5,pm10',
-        'past_days': 3,
+        'past_days': 7,
         'timezone': 'auto',
       },
     );

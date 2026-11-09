@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 
+import '../data/models/air_reading.dart';
 import '../data/models/official_warning.dart';
 import '../data/models/territory_snapshot.dart';
 import '../data/models/weather.dart';
@@ -78,6 +79,154 @@ class AlertEngine {
           : a.confidence.index.compareTo(b.confidence.index);
     });
     return alerts;
+  }
+
+  // ----------------------------------------------------------- datas antigas
+
+  /// Quantos dias para trás o app consulta alertas de datas antigas.
+  static const pastDays = 7;
+
+  static const _pastNote =
+      'Alerta de data antiga: o evento já passou e não é um alerta ativo. '
+      'Serve só como histórico para consulta.';
+
+  static const _pastRecommendation =
+      'Nenhuma ação é necessária por este alerta. Use-o para entender o que '
+      'aconteceu na última semana.';
+
+  /// Aplica as mesmas regras e limiares aos últimos 7 dias de dados já
+  /// ocorridos. Do mais recente para o mais antigo. Não entra no indicador
+  /// de benefício social, pois não são alertas ativos.
+  static List<TerritoryAlert> generatePast(
+    TerritorySnapshot snapshot, {
+    AlertThresholds thresholds = const AlertThresholds(),
+    DateTime? now,
+  }) {
+    final clock = now ?? DateTime.now();
+    final today = DateTime(clock.year, clock.month, clock.day);
+    final first = today.subtract(const Duration(days: pastDays));
+    bool inWindow(DateTime d) {
+      final day = DateTime(d.year, d.month, d.day);
+      return !day.isBefore(first) && day.isBefore(today);
+    }
+
+    final alerts = <TerritoryAlert>[
+      ..._pastWeather(snapshot, thresholds, inWindow, today),
+      ..._pastAir(snapshot, thresholds, inWindow, today),
+    ];
+    alerts.sort((a, b) {
+      final byDate = b.pastDate!.compareTo(a.pastDate!);
+      return byDate != 0 ? byDate : b.severity.index.compareTo(a.severity.index);
+    });
+    return alerts;
+  }
+
+  static Iterable<TerritoryAlert> _pastWeather(
+    TerritorySnapshot s,
+    AlertThresholds t,
+    bool Function(DateTime) inWindow,
+    DateTime today,
+  ) sync* {
+    final fmt = DateFormat('dd/MM');
+    final id = DateFormat('yyyyMMdd');
+    for (final d in s.history ?? const <DailyWeather>[]) {
+      if (!inWindow(d.date)) continue;
+      final ago = today.difference(DateTime(d.date.year, d.date.month, d.date.day)).inDays;
+      final rain = d.rainMm ?? 0;
+      if (rain >= t.rainAttentionMm) {
+        yield TerritoryAlert(
+          id: 'past-rain-${id.format(d.date)}',
+          kind: AlertKind.rain,
+          severity: rain >= t.rainHighMm ? AlertSeverity.high : AlertSeverity.attention,
+          source: AlertSource.rule,
+          title: 'Chuva forte em ${fmt.format(d.date)} (data antiga)',
+          summary: '${rain.toStringAsFixed(0)} mm no dia · há $ago dia(s)',
+          evidence: [
+            'Histórico do Open-Meteo: ${rain.toStringAsFixed(1)} mm em ${fmt.format(d.date)}.',
+            'Limiares do app: atenção a partir de ${t.rainAttentionMm.toStringAsFixed(0)} mm, '
+                'alto a partir de ${t.rainHighMm.toStringAsFixed(0)} mm por dia.',
+          ],
+          confidence: AlertConfidence.medium,
+          confidenceReason:
+              'Dado histórico de modelo (reanálise), não de pluviômetro local.',
+          limitations: const [
+            _pastNote,
+            'O total diário não diz a que horas a chuva caiu.',
+            'O valor pode diferir do que foi medido em um ponto específico da cidade.',
+          ],
+          recommendations: const [_pastRecommendation],
+          pastDate: d.date,
+        );
+      }
+      final max = d.tempMax;
+      if (max != null && max >= t.heatAttentionC) {
+        yield TerritoryAlert(
+          id: 'past-heat-${id.format(d.date)}',
+          kind: AlertKind.heat,
+          severity: max >= t.heatHighC ? AlertSeverity.high : AlertSeverity.attention,
+          source: AlertSource.rule,
+          title: 'Calor intenso em ${fmt.format(d.date)} (data antiga)',
+          summary: 'Máxima de ${max.toStringAsFixed(0)} °C · há $ago dia(s)',
+          evidence: [
+            'Histórico do Open-Meteo: máxima de ${max.toStringAsFixed(1)} °C em ${fmt.format(d.date)}.',
+            'Limiares do app: atenção a partir de ${t.heatAttentionC.toStringAsFixed(0)} °C, '
+                'alto a partir de ${t.heatHighC.toStringAsFixed(0)} °C.',
+          ],
+          confidence: AlertConfidence.medium,
+          confidenceReason:
+              'Dado histórico de modelo (reanálise), não de termômetro local.',
+          limitations: const [
+            _pastNote,
+            'A temperatura é do modelo para a região, não de um ponto da cidade.',
+          ],
+          recommendations: const [_pastRecommendation],
+          pastDate: d.date,
+        );
+      }
+    }
+  }
+
+  static Iterable<TerritoryAlert> _pastAir(
+    TerritorySnapshot s,
+    AlertThresholds t,
+    bool Function(DateTime) inWindow,
+    DateTime today,
+  ) sync* {
+    final byDay = <DateTime, double>{};
+    for (final a in s.air ?? const <AirReading>[]) {
+      final pm = a.pm25;
+      if (pm == null || !inWindow(a.time)) continue;
+      final day = DateTime(a.time.year, a.time.month, a.time.day);
+      if (pm > (byDay[day] ?? -1)) byDay[day] = pm;
+    }
+    final fmt = DateFormat('dd/MM');
+    final id = DateFormat('yyyyMMdd');
+    for (final e in byDay.entries) {
+      if (e.value < t.pm25Attention) continue;
+      final ago = today.difference(e.key).inDays;
+      yield TerritoryAlert(
+        id: 'past-air-${id.format(e.key)}',
+        kind: AlertKind.air,
+        severity: e.value >= t.pm25High ? AlertSeverity.high : AlertSeverity.attention,
+        source: AlertSource.rule,
+        title: 'Ar com muita poluição em ${fmt.format(e.key)} (data antiga)',
+        summary: 'Pico de ${e.value.toStringAsFixed(1)} µg/m³ · há $ago dia(s)',
+        evidence: [
+          'Maior PM2.5 horário de ${fmt.format(e.key)}: ${e.value.toStringAsFixed(1)} µg/m³.',
+          'Diretriz da OMS (média de 24 h): ${AirLevel.guidelinePm25.toStringAsFixed(0)} µg/m³.',
+          'Limiares do app: atenção a partir de ${t.pm25Attention.toStringAsFixed(0)}, '
+              'alto a partir de ${t.pm25High.toStringAsFixed(0)} µg/m³.',
+        ],
+        confidence: AlertConfidence.medium,
+        confidenceReason: 'Dado de modelo atmosférico, não de estação de medição.',
+        limitations: const [
+          _pastNote,
+          'O pico é horário e a diretriz da OMS é de média de 24 horas.',
+        ],
+        recommendations: const [_pastRecommendation],
+        pastDate: e.key,
+      );
+    }
   }
 
   // ---------------------------------------------------------------- oficiais

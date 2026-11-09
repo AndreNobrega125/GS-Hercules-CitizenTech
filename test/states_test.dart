@@ -234,6 +234,37 @@ void main() {
     expect(find.textContaining('Nenhuma ocorrência registrada'), findsOneWidget);
   });
 
+  testWidgets('datas antigas: chuva dos últimos 7 dias aparece marcada na lista e no detalhe',
+      (tester) async {
+    final prefs = await prefsLogged();
+    final api = _MockApi();
+    _online(api);
+    // Histórico termina anteontem (o arquivo atrasa), com chuva forte há 3 dias.
+    final d3 = DateTime.now().subtract(const Duration(days: 3));
+    final d2 = DateTime.now().subtract(const Duration(days: 2));
+    String iso(DateTime d) => d.toIso8601String().substring(0, 10);
+    when(() => api.history(any(), any())).thenAnswer((_) async => {
+          'daily': {
+            'time': [iso(d3), iso(d2)],
+            'temperature_2m_max': [26.0, 26.0],
+            'temperature_2m_min': [18.0, 18.0],
+            'precipitation_sum': [60.0, 2.0],
+          },
+        });
+    final territory = await _boot(tester, prefs, api, path: '/alerts');
+    await _settle(tester);
+
+    expect(territory.pastAlerts, hasLength(1));
+    expect(find.text('Datas antigas (últimos 7 dias)'), findsOneWidget);
+    expect(find.textContaining('data antiga'), findsWidgets);
+
+    final id = territory.pastAlerts.single.id;
+    GoRouter.of(tester.element(find.byType(Scaffold).first)).go('/alerts/$id');
+    await _settle(tester);
+    expect(find.textContaining('Não é um alerta ativo'), findsOneWidget);
+    expect(find.text('Data antiga'), findsOneWidget);
+  });
+
   testWidgets('lista vazia: alerta inexistente avisa que não está mais ativo',
       (tester) async {
     final prefs = await prefsLogged();
