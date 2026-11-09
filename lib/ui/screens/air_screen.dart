@@ -9,6 +9,7 @@ import '../../domain/air_level.dart';
 import '../../domain/territory_alert.dart';
 import '../../domain/trend.dart';
 import '../../state/territory_provider.dart';
+import '../widgets/chart_axis.dart';
 import '../widgets/chart_card.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/trend_chip.dart';
@@ -152,6 +153,7 @@ class _PmChart extends StatelessWidget {
               color: scheme.primary,
               barWidth: 3,
               isCurved: true,
+              preventCurveOverShooting: true,
               dotData: const FlDotData(show: false),
             ),
           ],
@@ -166,18 +168,11 @@ class _PmChart extends StatelessWidget {
           minY: 0,
           gridData: const FlGridData(drawVerticalLine: false),
           borderData: FlBorderData(show: false),
-          titlesData: const FlTitlesData(
-            topTitles: AxisTitles(),
-            rightTitles: AxisTitles(),
-            bottomTitles: AxisTitles(),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 32,
-                minIncluded: false,
-                maxIncluded: false,
-              ),
-            ),
+          titlesData: FlTitlesData(
+            topTitles: const AxisTitles(),
+            rightTitles: const AxisTitles(),
+            bottomTitles: const AxisTitles(),
+            leftTitles: AxisTitles(sideTitles: ChartAxis.left(context)),
           ),
         ),
       ),

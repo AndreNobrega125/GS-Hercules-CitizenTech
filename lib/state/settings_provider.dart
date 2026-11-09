@@ -35,6 +35,13 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Desfaz o aceite: o app volta à tela de consentimento (rever os termos).
+  Future<void> revokeConsent() async {
+    _consentGiven = false;
+    await _prefs.setBool(_kConsent, false);
+    notifyListeners();
+  }
+
   Future<void> giveConsent() async {
     _consentGiven = true;
     await _prefs.setBool(_kConsent, true);

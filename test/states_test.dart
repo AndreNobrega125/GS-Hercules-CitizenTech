@@ -179,7 +179,7 @@ void main() {
     await _settle(tester);
 
     expect(find.text('Tentar de novo'), findsNothing);
-    expect(find.text('Clima hoje'), findsOneWidget);
+    expect(find.text('Temperatura hoje'), findsOneWidget);
   });
 
   testWidgets('offline com cache: mostra "Modo offline" e os dados salvos',
@@ -199,7 +199,7 @@ void main() {
     await _settle(tester);
 
     expect(find.text('Modo offline'), findsOneWidget);
-    expect(find.text('Clima hoje'), findsOneWidget);
+    expect(find.text('Temperatura hoje'), findsOneWidget);
     expect(find.text('Tentar de novo'), findsNothing);
   });
 
@@ -263,6 +263,39 @@ void main() {
     await _settle(tester);
     expect(find.textContaining('Não é um alerta ativo'), findsOneWidget);
     expect(find.text('Data antiga'), findsOneWidget);
+  });
+
+  testWidgets('visão geral: cartões de temperatura, chuva, ar e alertas', (tester) async {
+    final prefs = await prefsLogged();
+    final api = _MockApi();
+    _online(api);
+    await _boot(tester, prefs, api);
+    await _settle(tester);
+
+    for (final t in ['Temperatura hoje', 'Chuva hoje', 'Qualidade do ar', 'Alertas ativos']) {
+      expect(find.text(t), findsOneWidget, reason: t);
+    }
+    expect(find.textContaining('Mínima de 18°C'), findsOneWidget);
+  });
+
+  testWidgets('configurações: "Rever termos" volta à tela de consentimento',
+      (tester) async {
+    final prefs = await prefsLogged();
+    final api = _MockApi();
+    _online(api);
+    await _boot(tester, prefs, api, path: '/settings');
+    await _settle(tester);
+
+    await tester.tap(find.text('Rever termos de consentimento'));
+    await _settle(tester);
+    expect(find.text('Rever os termos?'), findsOneWidget);
+
+    await tester.tap(find.text('Rever termos'));
+    await _settle(tester);
+
+    expect(find.text('Li e concordo'), findsOneWidget);
+    expect(prefs.getBool('consent_given'), isFalse);
+    expect(prefs.getString('session_user'), isNull);
   });
 
   testWidgets('lista vazia: alerta inexistente avisa que não está mais ativo',

@@ -10,6 +10,37 @@ import '../../state/user_data_provider.dart';
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
+  /// Pede confirmação, desfaz o aceite e sai da conta; o roteador leva aos termos.
+  Future<void> _reviewConsent(BuildContext context) async {
+    final settings = context.read<SettingsProvider>();
+    final auth = context.read<AuthProvider>();
+    final userData = context.read<UserDataProvider>();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Rever os termos?'),
+        content: const Text(
+          'Você voltará à tela de consentimento e sairá da conta. '
+          'Seus dados salvos neste aparelho continuam guardados.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Rever termos'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    userData.clear();
+    await auth.logout();
+    await settings.revokeConsent();
+  }
+
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsProvider>();
@@ -50,6 +81,13 @@ class SettingsScreen extends StatelessWidget {
             subtitle: const Text('Registros anônimos salvos neste aparelho'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.pushNamed(Routes.occurrences),
+          ),
+          ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: const Text('Rever termos de consentimento'),
+            subtitle: const Text('Volta à tela de termos e sai da conta'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _reviewConsent(context),
           ),
           const SizedBox(height: 8),
           Text('Tema', style: Theme.of(context).textTheme.titleMedium),

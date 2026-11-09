@@ -32,6 +32,7 @@ void main() {
         s.surfaceContainerHighest,
       ),
       'botão preenchido': (s.onPrimary, s.primary),
+      'cartão de destaque (temperatura)': (s.onPrimaryContainer, s.primaryContainer),
       'alerta informativo': (s.onSecondaryContainer, s.secondaryContainer),
       'alerta de atenção': (s.onTertiaryContainer, s.tertiaryContainer),
       'alerta alto/crítico': (s.onErrorContainer, s.errorContainer),

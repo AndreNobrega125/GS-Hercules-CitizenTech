@@ -5,9 +5,14 @@ import 'package:provider/provider.dart';
 
 import '../../app/router.dart';
 import '../../data/models/territory_snapshot.dart';
+import '../../data/models/weather.dart';
+import '../../domain/air_level.dart';
 import '../../domain/social_indicator.dart';
+import '../../domain/territory_alert.dart';
 import '../../state/territory_provider.dart';
 import '../widgets/alert_banner.dart';
+import '../widgets/alert_style.dart';
+import '../widgets/summary_card.dart';
 
 class OverviewScreen extends StatelessWidget {
   const OverviewScreen({super.key});
@@ -127,22 +132,11 @@ class _Content extends StatelessWidget {
               title: 'Modo offline',
               body: 'Mostrando dados salvos em $stamp.',
             ),
-          _Tile(
-            icon: Icons.thermostat,
-            title: 'Clima hoje',
-            onTap: () => context.goNamed(Routes.climate),
-            body: today == null
-                ? 'Sem dados de clima.'
-                : '${today.tempMin?.round()}° a ${today.tempMax?.round()}° · '
-                    'chuva ${today.rainMm?.toStringAsFixed(1)} mm',
-          ),
-          _Tile(
-            icon: Icons.air,
-            title: 'Qualidade do ar (PM2.5)',
-            onTap: () => context.goNamed(Routes.air),
-            body: lastAir?.pm25 == null
-                ? 'Sem dados do ar.'
-                : '${lastAir!.pm25!.toStringAsFixed(1)} µg/m³',
+          _SummaryGrid(
+            today: today,
+            pm25: lastAir?.pm25,
+            alerts: alerts,
+            pastCount: context.watch<TerritoryProvider>().pastAlerts.length,
           ),
           _Tile(
             icon: Icons.warning_amber,
@@ -154,14 +148,6 @@ class _Content extends StatelessWidget {
                     ? 'Nenhum aviso ativo para ${context.read<TerritoryProvider>().territory.name}.'
                     : '${warnings.length} aviso(s) ativo(s): '
                         '${warnings.map((w) => w.description).join(', ')}',
-          ),
-          _Tile(
-            icon: Icons.notifications_active,
-            title: 'Alertas',
-            body: alerts.isEmpty
-                ? 'Nenhum alerta no momento.'
-                : '${alerts.length} alerta(s) com justificativa e confiança.',
-            onTap: () => context.pushNamed(Routes.alerts),
           ),
           if (social != null)
             _Tile(
@@ -188,6 +174,103 @@ class _Content extends StatelessWidget {
                 ? 'Sem dados de população.'
                 : NumberFormat.decimalPattern('pt_BR').format(snapshot.population),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Quatro cartões de destaque: temperatura, chuva, ar e alertas ativos.
+class _SummaryGrid extends StatelessWidget {
+  const _SummaryGrid({
+    required this.today,
+    required this.pm25,
+    required this.alerts,
+    required this.pastCount,
+  });
+
+  final DailyWeather? today;
+  final double? pm25;
+  final List<TerritoryAlert> alerts;
+  final int pastCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    final temp = SummaryCard(
+      icon: Icons.thermostat,
+      title: 'Temperatura hoje',
+      value: today?.tempMax == null ? '—' : '${today!.tempMax!.round()}°C',
+      caption: today?.tempMin == null
+          ? 'Sem dados de clima'
+          : 'Mínima de ${today!.tempMin!.round()}°C',
+      background: scheme.primaryContainer,
+      foreground: scheme.onPrimaryContainer,
+      onTap: () => context.goNamed(Routes.climate),
+    );
+
+    final rain = SummaryCard(
+      icon: Icons.water_drop,
+      title: 'Chuva hoje',
+      value: today?.rainMm == null
+          ? '—'
+          : '${today!.rainMm!.toStringAsFixed(1)} mm',
+      caption: 'Previsão do dia',
+      background: scheme.secondaryContainer,
+      foreground: scheme.onSecondaryContainer,
+      onTap: () => context.goNamed(Routes.climate),
+    );
+
+    final level = pm25 == null ? null : AirLevel.fromPm25(pm25!);
+    final airColors = switch (level?.severity) {
+      null || 0 => (scheme.secondaryContainer, scheme.onSecondaryContainer),
+      1 => (scheme.tertiaryContainer, scheme.onTertiaryContainer),
+      _ => (scheme.errorContainer, scheme.onErrorContainer),
+    };
+    final air = SummaryCard(
+      icon: Icons.air,
+      title: 'Qualidade do ar',
+      value: pm25 == null ? '—' : '${pm25!.toStringAsFixed(1)} µg/m³',
+      caption: level == null ? 'Sem dados do ar' : 'PM2.5 · ${level.label}',
+      background: airColors.$1,
+      foreground: airColors.$2,
+      onTap: () => context.goNamed(Routes.air),
+    );
+
+    final top = alerts.isEmpty ? null : alerts.first;
+    final topStyle = top == null ? null : AlertStyle.of(context, top.severity);
+    final past = pastCount == 0 ? '' : ' · $pastCount de datas antigas';
+    final alert = SummaryCard(
+      icon: topStyle?.icon ?? Icons.check_circle_outline,
+      title: 'Alertas ativos',
+      value: '${alerts.length}',
+      caption: top == null
+          ? 'Nenhum alerta agora$past'
+          : 'Mais alto: ${top.severity.label}$past',
+      background: topStyle?.background ?? scheme.secondaryContainer,
+      foreground: topStyle?.foreground ?? scheme.onSecondaryContainer,
+      onTap: () => context.pushNamed(Routes.alerts),
+    );
+
+    Widget row(Widget a, Widget b) => IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: a),
+              const SizedBox(width: 12),
+              Expanded(child: b),
+            ],
+          ),
+        );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        children: [
+          row(temp, alert),
+          const SizedBox(height: 12),
+          row(rain, air),
         ],
       ),
     );

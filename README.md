@@ -10,13 +10,14 @@
 ![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.12-0175C2?logo=dart&logoColor=white)
 ![Plataformas](https://img.shields.io/badge/Android%20%7C%20Windows-teal)
-![Testes](https://img.shields.io/badge/testes-101%20passando-brightgreen)
+![Testes](https://img.shields.io/badge/testes-106%20passando-brightgreen)
 ![Licença](https://img.shields.io/badge/uso-acad%C3%AAmico-lightgrey)
+[![APK](https://img.shields.io/badge/APK-baixar%20no%20Release-brightgreen?logo=android&logoColor=white)](https://github.com/AndreNobrega125/GS-Hercules-CitizenTech/releases/latest)
 
 Global Solution 2026.2 · FIAP · Cross-Platform Application Development
 Desafio **Territory Predictive Insights**
 
-[🎬 Vídeo de demonstração](#-9-vídeo) · [▶️ Como executar](#-8-como-executar) · [📊 Dados e alertas](#-5-dados-e-alertas)
+[📲 Baixar o APK](#-instalar-o-apk-android) · [🎬 Vídeo de demonstração](#-9-vídeo) · [▶️ Como executar](#-8-como-executar) · [📊 Dados e alertas](#-5-dados-e-alertas)
 
 </div>
 
@@ -221,6 +222,16 @@ flutter test
 | Gestor do Rio de Janeiro | `gestor.rj@radar.demo` |
 
 > 📶 Cada município precisa de internet na primeira vez que é aberto. Depois disso, o app funciona offline com o último dado baixado.
+
+### 📲 Instalar o APK (Android)
+
+O **APK de release está neste repositório**, na aba **Releases**: [baixar a versão mais recente](https://github.com/AndreNobrega125/GS-Hercules-CitizenTech/releases/latest) (um arquivo `.apk` de cerca de 54 MB).
+
+1. No celular Android, abra o link acima e baixe o arquivo `.apk`.
+2. Toque no arquivo e permita a instalação de fontes desconhecidas, se o Android pedir.
+3. Abra o **Radar do Território**. Na primeira vez aparece o consentimento e depois o login (contas de demonstração acima).
+
+O APK é gerado com `flutter build apk --release` e assinado com a chave de depuração: serve para demonstração e instalação direta, não para a Play Store. Para rever a tela de consentimento depois, use *Configurações → Rever termos de consentimento*.
 
 ## 🎬 9. Vídeo
 

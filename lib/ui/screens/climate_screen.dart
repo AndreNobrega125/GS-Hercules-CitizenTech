@@ -9,6 +9,7 @@ import '../../data/models/weather.dart';
 import '../../domain/territory_alert.dart';
 import '../../domain/trend.dart';
 import '../../state/territory_provider.dart';
+import '../widgets/chart_axis.dart';
 import '../widgets/chart_card.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/trend_chip.dart';
@@ -136,21 +137,15 @@ class _RainChart extends StatelessWidget {
           titlesData: FlTitlesData(
             topTitles: const AxisTitles(),
             rightTitles: const AxisTitles(),
-            leftTitles: const AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 32,
-                minIncluded: false,
-                maxIncluded: false,
-              ),
-            ),
+            leftTitles: AxisTitles(sideTitles: ChartAxis.left(context)),
             bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                getTitlesWidget: (v, meta) => SideTitleWidget(
-                  meta: meta,
-                  child: Text(label.format(forecast[v.toInt()].date)),
-                ),
+              sideTitles: ChartAxis.bottom(
+                context,
+                (i) => i >= 0 && i < forecast.length
+                    ? toBeginningOfSentenceCase(
+                        label.format(forecast[i].date).replaceAll('.', ''),
+                      )!
+                    : '',
               ),
             ),
           ),
@@ -187,6 +182,7 @@ class _TempChart extends StatelessWidget {
           spots: s,
           color: c,
           isCurved: true,
+          preventCurveOverShooting: true,
           barWidth: 3,
           dotData: const FlDotData(show: false),
           dashArray: dashed ? [6, 4] : null,
@@ -205,18 +201,11 @@ class _TempChart extends StatelessWidget {
           ],
           gridData: const FlGridData(drawVerticalLine: false),
           borderData: FlBorderData(show: false),
-          titlesData: const FlTitlesData(
-            topTitles: AxisTitles(),
-            rightTitles: AxisTitles(),
-            bottomTitles: AxisTitles(),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 32,
-                minIncluded: false,
-                maxIncluded: false,
-              ),
-            ),
+          titlesData: FlTitlesData(
+            topTitles: const AxisTitles(),
+            rightTitles: const AxisTitles(),
+            bottomTitles: const AxisTitles(),
+            leftTitles: AxisTitles(sideTitles: ChartAxis.left(context)),
           ),
         ),
       ),
