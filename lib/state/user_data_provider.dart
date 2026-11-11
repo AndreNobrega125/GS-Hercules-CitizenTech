@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -6,15 +7,25 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/territory.dart';
 import '../data/models/occurrence.dart';
 import '../data/models/user_profile.dart';
+import '../data/services/supabase_service.dart';
+
+enum SyncStatus { ok, offline }
 
 /// Dados do perfil ativo (favoritos e ocorrências), salvos só neste aparelho.
 /// Toda chave leva o prefixo `u_<perfil>_`: um perfil nunca lê o outro.
 class UserDataProvider extends ChangeNotifier {
-  UserDataProvider(this._prefs, [UserProfile? user]) {
-    if (user != null) _load(user);
+  UserDataProvider(this._prefs, [UserProfile? user, this._remote]) {
+    if (user != null) {
+      _load(user);
+      unawaited(sync());
+    }
   }
 
   final SharedPreferences _prefs;
+  final OccurrenceRemote? _remote;
+
+  /// Última tentativa de sincronização: null = sem Supabase configurado.
+  SyncStatus? syncStatus;
   String? _userId;
   List<Territory> _favorites = const [];
   List<Occurrence> _occurrences = const [];
@@ -28,6 +39,44 @@ class UserDataProvider extends ChangeNotifier {
 
   void useUser(UserProfile user) {
     _load(user);
+    notifyListeners();
+    unawaited(sync());
+  }
+
+  Set<String> _idSet(String name) =>
+      (_prefs.getStringList(_k(name)) ?? const <String>[]).toSet();
+
+  /// Envia ocorrências ainda não enviadas e traz as do servidor (se configurado).
+  /// Falha de rede não perde nada: tenta de novo na próxima vez.
+  Future<void> sync() async {
+    final remote = _remote;
+    final uid = _userId;
+    if (remote == null || uid == null) return;
+    try {
+      final remoteList = await remote.fetch(uid);
+      if (_userId != uid) return; // trocou de perfil durante a chamada
+      final synced = _idSet('synced');
+      final deleted = _idSet('deleted');
+      final localIds = _occurrences.map((o) => o.id).toSet();
+      final remoteIds = remoteList.map((o) => o.id).toSet();
+
+      for (final o in _occurrences) {
+        if (!remoteIds.contains(o.id)) await remote.upsert(uid, o);
+        synced.add(o.id);
+      }
+      final incoming = remoteList
+          .where((o) => !localIds.contains(o.id) && !deleted.contains(o.id));
+      if (incoming.isNotEmpty) {
+        _occurrences = [..._occurrences, ...incoming]
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        await _save('occurrences', [for (final e in _occurrences) e.toJson()]);
+      }
+      synced.addAll(remoteIds);
+      await _prefs.setStringList(_k('synced'), synced.toList());
+      syncStatus = SyncStatus.ok;
+    } catch (_) {
+      syncStatus = SyncStatus.offline;
+    }
     notifyListeners();
   }
 
@@ -100,11 +149,14 @@ class UserDataProvider extends ChangeNotifier {
     _occurrences = [o, ..._occurrences];
     await _save('occurrences', [for (final e in _occurrences) e.toJson()]);
     notifyListeners();
+    unawaited(sync());
   }
 
   Future<void> removeOccurrence(String id) async {
     if (_userId == null) return;
     _occurrences = _occurrences.where((o) => o.id != id).toList();
+    // A chave pública não apaga no servidor: lembra o id para não trazer de volta.
+    await _prefs.setStringList(_k('deleted'), (_idSet('deleted')..add(id)).toList());
     await _save('occurrences', [for (final e in _occurrences) e.toJson()]);
     notifyListeners();
   }

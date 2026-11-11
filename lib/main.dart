@@ -8,6 +8,7 @@ import 'app/router.dart';
 import 'core/theme/app_theme.dart';
 import 'data/repositories/territory_repository.dart';
 import 'data/services/api_service.dart';
+import 'data/services/supabase_service.dart';
 import 'state/auth_provider.dart';
 import 'state/settings_provider.dart';
 import 'state/user_data_provider.dart';
@@ -25,7 +26,12 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => SettingsProvider(prefs)),
         ChangeNotifierProvider.value(value: auth),
-        ChangeNotifierProvider(create: (_) => UserDataProvider(prefs, auth.user)),
+        ChangeNotifierProvider(create: (_) => UserDataProvider(
+            prefs,
+            auth.user,
+            SupabaseConfig.enabled ? SupabaseService() : null,
+          ),
+        ),
         ChangeNotifierProvider(
           create: (_) => TerritoryProvider(repository, prefs, auth.user)..load(),
         ),

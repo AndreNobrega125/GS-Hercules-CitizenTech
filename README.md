@@ -233,6 +233,16 @@ O **APK de release está neste repositório**, na aba **Releases**: [baixar a ve
 
 O APK é gerado com `flutter build apk --release` e assinado com a chave de depuração: serve para demonstração e instalação direta, não para a Play Store. Para rever a tela de consentimento depois, use *Configurações → Rever termos de consentimento*.
 
+### 🗄️ Banco de dados opcional (Supabase)
+
+As ocorrências podem ser sincronizadas com um banco Supabase. É opcional: sem configuração, o app usa só o armazenamento local.
+
+1. No Supabase, rode o SQL de [`supabase/schema.sql`](supabase/schema.sql) (cria a tabela com RLS).
+2. Copie `supabase.example.json` para `supabase.json` (ignorado pelo Git) e preencha a URL e a chave **pública** do seu projeto.
+3. Execute com `flutter run --dart-define-from-file=supabase.json`.
+
+As ocorrências são gravadas primeiro no aparelho e enviadas depois; sem rede, ficam guardadas e sobem na próxima sincronização. **Limitação:** o login é simulado, então o banco não isola dados por usuário. Qualquer pessoa com a chave pública pode ler as ocorrências, que são anônimas (sem nome nem contato). Apagar remove só do aparelho.
+
 ## 🎬 9. Vídeo
 
 <!-- Troque pelo link público (YouTube ou Drive) e, se quiser, por uma thumbnail clicável -->
