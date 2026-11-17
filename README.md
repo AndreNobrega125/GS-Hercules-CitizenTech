@@ -104,12 +104,36 @@ Desafio **Territory Predictive Insights**
 **Dados e estado**
 - [x] Estado global compartilhado (`provider`) com carregamento, erro (com nova tentativa) e lista vazia
 - [x] Dados de APIs reais, com cache local por município: o app abre offline com o último dado baixado
+- [x] Mapa que pode ser baixado para uso offline (tiles guardados por 30 dias, com limite de tamanho)
+- [x] Ocorrências sincronizadas com um banco Supabase, opcional e com fallback local (veja "Banco de dados opcional" na seção 8)
 - [x] Formulários com validação e mensagens de erro: limiares de alerta e registro de ocorrência
 
 **Qualidade**
 - [x] Tema claro, escuro e de alto contraste
 - [x] Acessibilidade testada: fonte 2x, dois tamanhos de tela, contraste, alvos de toque e rótulos
 - [x] Testes automatizados de alertas, estatística, validações, login e acessibilidade
+
+### ⭐ Diferenciais (bônus do enunciado)
+
+**5 dos 8 diferenciais do enunciado foram implementados:** dados reais, mapa, temas, testes automatizados e APK de release.
+
+| Diferencial | Feito? | Onde está |
+|---|:--:|---|
+| **Dados reais** | ✅ | Open-Meteo (clima e ar), IBGE (municípios, população e contorno) e avisos oficiais do INMET, sem chave de API |
+| **Mapa e geolocalização** | ✅ | Tela Riscos: mapa com o contorno do município (`flutter_map`) e mapa baixável para uso offline. Não usa o GPS: o território é escolhido pelo usuário |
+| **Temas** | ✅ | Claro, escuro e **alto contraste**, com contraste medido por teste (WCAG) |
+| **Testes automatizados** | ✅ | Mais de 100 casos de teste (114 na última execução) cobrindo motor de alertas, estatística, validações, login, estados de tela, acessibilidade e sincronização, em `test/` |
+| **APK de release** | ✅ | [Releases do repositório](https://github.com/AndreNobrega125/GS-Hercules-CitizenTech/releases) (o APK publicado, v1.2.0, não inclui a sincronização com Supabase nem o mapa offline, que estão no código-fonte) |
+| Notificações locais | ❌ | Não implementado |
+| IA generativa | ❌ | Não implementado: os alertas usam regras e estatística, sem LLM |
+| Animações | ❌ | Não implementado |
+
+**Extras além da lista do enunciado**
+- Estatística em Dart puro (regressão linear com R², z-score e suavização exponencial) com nível de confiança que nunca chega a "alta" nos alertas estatísticos
+- Alertas de datas antigas (últimos 7 dias) em seção própria
+- Dois perfis de demonstração com dados isolados por usuário
+- Sincronização opcional com Supabase (com regras de acesso por linha) e cache offline de mapa e de dados por município
+- Consentimento revisável a qualquer momento em Configurações
 
 ## 📊 5. Dados e alertas
 

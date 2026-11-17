@@ -9,6 +9,7 @@ import '../../core/territory.dart';
 import '../../domain/alert_engine.dart';
 import '../../data/models/city_boundary.dart';
 import '../../data/models/official_warning.dart';
+import '../../data/services/map_cache.dart';
 import '../../state/territory_provider.dart';
 import '../widgets/empty_state.dart';
 
@@ -32,6 +33,8 @@ class RisksScreen extends StatelessWidget {
             boundary: snapshot?.boundary,
             territory: city,
           ),
+          if (snapshot?.boundary?.bounds != null)
+            _OfflineMapButton(bounds: snapshot!.boundary!.bounds!),
           const SizedBox(height: 12),
           Text(
             'Avisos do INMET para ${city.name}',
@@ -60,6 +63,68 @@ class RisksScreen extends StatelessWidget {
             'Em emergência, procure a Defesa Civil (199).',
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Baixa de antemão os tiles do município atual para o mapa funcionar offline.
+class _OfflineMapButton extends StatefulWidget {
+  const _OfflineMapButton({required this.bounds});
+
+  final LatLngBounds bounds;
+
+  @override
+  State<_OfflineMapButton> createState() => _OfflineMapButtonState();
+}
+
+class _OfflineMapButtonState extends State<_OfflineMapButton> {
+  bool _busy = false;
+  int _done = 0;
+  int _total = 0;
+
+  Future<void> _download() async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() {
+      _busy = true;
+      _done = 0;
+      _total = MapCache.plan(widget.bounds).length;
+    });
+    final saved = await MapCache.prefetch(
+      widget.bounds,
+      onProgress: (done, total) {
+        if (mounted) setState(() => _done = done);
+      },
+    );
+    if (!mounted) return;
+    setState(() => _busy = false);
+    messenger.showSnackBar(SnackBar(
+      content: Text(
+        saved == 0
+            ? 'Não foi possível baixar o mapa. Verifique a conexão.'
+            : 'Mapa salvo para uso offline ($saved partes, válido por 30 dias).',
+      ),
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton.icon(
+        onPressed: _busy ? null : _download,
+        icon: _busy
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.download_for_offline),
+        label: Text(
+          _busy
+              ? 'Baixando mapa… $_done/$_total'
+              : 'Baixar mapa para usar offline',
+        ),
       ),
     );
   }

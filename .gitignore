@@ -1,6 +1,9 @@
 # Configuração local do Supabase (nunca versionar)
 /supabase.json
 
+# Anotações pessoais de apoio (não fazem parte da entrega)
+/roteiro-video.md
+
 # Miscellaneous
 *.class
 *.log

@@ -8,6 +8,7 @@ import 'app/router.dart';
 import 'core/theme/app_theme.dart';
 import 'data/repositories/territory_repository.dart';
 import 'data/services/api_service.dart';
+import 'data/services/map_cache.dart';
 import 'data/services/supabase_service.dart';
 import 'state/auth_provider.dart';
 import 'state/settings_provider.dart';
@@ -16,6 +17,7 @@ import 'state/territory_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  MapCache.init();
   await initializeDateFormatting('pt_BR');
   Intl.defaultLocale = 'pt_BR';
   final prefs = await SharedPreferences.getInstance();
