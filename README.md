@@ -10,7 +10,7 @@
 ![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.12-0175C2?logo=dart&logoColor=white)
 ![Plataformas](https://img.shields.io/badge/Android%20%7C%20Windows-teal)
-![Testes](https://img.shields.io/badge/testes-106%20passando-brightgreen)
+![Testes](https://img.shields.io/badge/testes-114%20passando-brightgreen)
 ![Licença](https://img.shields.io/badge/uso-acad%C3%AAmico-lightgrey)
 [![APK](https://img.shields.io/badge/APK-baixar%20no%20Release-brightgreen?logo=android&logoColor=white)](https://github.com/AndreNobrega125/GS-Hercules-CitizenTech/releases/latest)
 
@@ -269,8 +269,7 @@ As ocorrências são gravadas primeiro no aparelho e enviadas depois; sem rede, 
 
 ## 🎬 9. Vídeo
 
-<!-- Troque pelo link público (YouTube ou Drive) e, se quiser, por uma thumbnail clicável -->
-**Link:** _a incluir_
+**Link:** [▶️ Assistir à demonstração no YouTube](https://youtube.com/shorts/p8iogAOOvJg) (2 min 55 s)
 
 ## 📜 10. Licença
 
