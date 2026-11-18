@@ -105,8 +105,11 @@ class _Content extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final today = snapshot.forecast?.firstOrNull;
+    // Só horas que já passaram: a série do Open-Meteo inclui horas futuras, e o
+    // valor "atual" precisa ser o mesmo da tela de Ar e do motor de alertas.
+    final now = DateTime.now();
     final lastAir = snapshot.air?.lastWhere(
-      (a) => a.pm25 != null,
+      (a) => a.pm25 != null && !a.time.isAfter(now),
       orElse: () => snapshot.air!.last,
     );
     final warnings = snapshot.warnings;

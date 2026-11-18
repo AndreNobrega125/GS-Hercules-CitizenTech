@@ -142,6 +142,7 @@ class _OccurrenceFormScreenState extends State<OccurrenceFormScreen> {
               maxLength: 280,
               decoration: const InputDecoration(
                 labelText: 'Descrição',
+                errorMaxLines: 3,
                 alignLabelWithHint: true,
                 border: OutlineInputBorder(),
               ),
